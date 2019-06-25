@@ -20,7 +20,9 @@ tfd = tfp.distributions
 # TODO: Do fitting
 # TODO: Split files/Unit tests/comments/doc comments
 
-mass_mu = tf.constant(105.6583745e6)  # in eV/c^2
+mass_mu = tf.constant(105.6583745e6)  # in 106 MeV/c^2
+q2_min = tf.constant(2.0e18)  # 2 (GeV/c^2)^2
+q2_max = tf.constant(6.0e18)  # 6 (GeV/c^2)^2
 
 
 def decay_rate(independent_vars):
@@ -129,10 +131,10 @@ def decay_rate(independent_vars):
 
 
 def generate_signal(signal_samples, options_num):
+    q2_distribution = tfd.Uniform(low=q2_min, high=q2_max)
     cos_theta_k_distribution = tfd.Uniform(low=-1.0, high=1.0)
     cos_theta_l_distribution = tfd.Uniform(low=-1.0, high=1.0)
     phi_distribution = tfd.Uniform(low=-2*math.pi, high=2*math.pi)
-    q2_distribution = tfd.Uniform(low=2.0e18, high=6.0e18)  # 2.0 to 6.0 (GeV/c^2)^2
 
     def _print(name, t):
         tf.print(name, "(shape", tf.shape(t), "):\n", t, output_stream=sys.stdout, end="\n\n")
@@ -183,5 +185,3 @@ for ax, feature, title in zip(axes.flatten(), s.numpy().transpose(), titles):
     ax.set(title=title)
 
 plt.show()
-
-exit(0)

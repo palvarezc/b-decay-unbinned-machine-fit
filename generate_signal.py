@@ -42,7 +42,7 @@ def generate_signal(signal_samples, variable_samples=10000):
     def _print(name, t):
         tf.print(name, "(shape", tf.shape(t), "):\n", t, output_stream=sys.stdout, end="\n\n")
 
-    # Is number of options right?
+    # TODO: Is number of options right?
     options = tf.stack(
         [
             q2_distribution.sample(variable_samples),
@@ -67,7 +67,7 @@ def generate_signal(signal_samples, variable_samples=10000):
     keys = np.random.choice(options.get_shape()[0], signal_samples, p=probabilities.numpy())
     _print("keys", keys)
 
-    # TODO: Do not convert to numpy
+    # FIXME: Do not convert to numpy
     signal = np.take(options.numpy().transpose(), keys, axis=1).transpose()
     _print("signal", signal)
 

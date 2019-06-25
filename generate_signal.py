@@ -1,10 +1,10 @@
 import math
-import tensorflow as tf
-import tensorflow_probability as tfp
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import sys
+import tensorflow as tf
+import tensorflow_probability as tfp
 
 tf.enable_v2_behavior()
 tfd = tfp.distributions
@@ -85,9 +85,9 @@ titles = [
     r'$\phi$'
 ]
 
-for ax, feature, name in zip(axes.flatten(), s.transpose(), titles):
+for ax, feature, title in zip(axes.flatten(), s.transpose(), titles):
     sns.distplot(feature, ax=ax, bins=20)
-    ax.set(title=name)
+    ax.set(title=title)
 
 plt.show()
 

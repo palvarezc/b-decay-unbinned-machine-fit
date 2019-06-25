@@ -13,22 +13,21 @@ if not tf2.enabled():
 
 tfd = tfp.distributions
 
-# TODO: Make signal generation continuous rather than binned?
-# TODO: Run decay_rate() all on data at once?
 # TODO: Check signal terms
 # TODO: Basis fixing
 # TODO: Convert to tf distribution?
 # TODO: Pip requirements.txt (& test)
 # TODO: Do fitting
+# TODO: Split files/Unit tests/comments/doc comments
 
 mass_mu = tf.constant(105.6583745e6)  # in eV/c^2
 
 
-def decay_rate(x):
-    q2 = x[0]
-    cos_theta_k = x[1]
-    cos_theta_l = x[2]
-    phi = x[3]
+def decay_rate(independent_vars):
+    q2 = independent_vars[:, 0]
+    cos_theta_k = independent_vars[:, 1]
+    cos_theta_l = independent_vars[:, 2]
+    phi = independent_vars[:, 3]
 
     one = tf.constant(1.0)
     two = tf.constant(2.0)
@@ -129,7 +128,7 @@ def decay_rate(x):
     )
 
 
-def generate_signal(signal_samples, variable_samples=10000):
+def generate_signal(signal_samples, options_num):
     cos_theta_k_distribution = tfd.Uniform(low=-1.0, high=1.0)
     cos_theta_l_distribution = tfd.Uniform(low=-1.0, high=1.0)
     phi_distribution = tfd.Uniform(low=-2*math.pi, high=2*math.pi)
@@ -138,26 +137,25 @@ def generate_signal(signal_samples, variable_samples=10000):
     def _print(name, t):
         tf.print(name, "(shape", tf.shape(t), "):\n", t, output_stream=sys.stdout, end="\n\n")
 
-    # TODO: Is number of options right?
     options = tf.stack(
         [
-            q2_distribution.sample(variable_samples),
-            cos_theta_k_distribution.sample(variable_samples),
-            cos_theta_l_distribution.sample(variable_samples),
-            phi_distribution.sample(variable_samples)
+            q2_distribution.sample(options_num),
+            cos_theta_k_distribution.sample(options_num),
+            cos_theta_l_distribution.sample(options_num),
+            phi_distribution.sample(options_num)
         ],
         axis=1,
         name='signal_options'
     )
     _print("options", options)
 
-    decay_rates = tf.map_fn(decay_rate, options)
+    decay_rates = decay_rate(options)
     _print("decay_rates", decay_rates)
 
     total_decay_rate = tf.reduce_sum(decay_rates)
     _print("total_decay_rate", total_decay_rate)
 
-    probabilities = tf.map_fn(lambda x: x / total_decay_rate, decay_rates)
+    probabilities = decay_rates / total_decay_rate
     _print("probabilities", probabilities)
 
     keys = np.random.choice(options.get_shape()[0], signal_samples, p=probabilities.numpy())
@@ -169,7 +167,7 @@ def generate_signal(signal_samples, variable_samples=10000):
     return signal
 
 
-s = generate_signal(10000, 10000)
+s = generate_signal(10_000, 10_000_000)
 
 fig, axes = plt.subplots(nrows=2, ncols=2)
 fig.suptitle('Signal distributions')

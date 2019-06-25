@@ -15,6 +15,7 @@ tfd = tfp.distributions
 
 # TODO: Check signal terms
 # TODO: Basis fixing
+# TODO: Consistent angle transforms
 # TODO: Convert to tf distribution?
 # TODO: Pip requirements.txt (& test)
 # TODO: Do fitting
@@ -30,11 +31,14 @@ def decay_rate(independent_vars):
     cos_theta_k = independent_vars[:, 1]
     cos_theta_l = independent_vars[:, 2]
     phi = independent_vars[:, 3]
+    num_rows = independent_vars.get_shape()[0]
 
+    # Constants
     one = tf.constant(1.0)
     two = tf.constant(2.0)
     four = tf.constant(4.0)
 
+    # Angles
     cos2_theta_k = cos_theta_k**2
     sin2_theta_k = one - cos2_theta_k
     sin_theta_k = tf.sqrt(sin2_theta_k)
@@ -51,17 +55,103 @@ def decay_rate(independent_vars):
     sin_phi = tf.math.sin(phi)
     sin_2phi = tf.math.sin(two * phi)
 
+    # Mass terms
     four_mass_mu_over_q2 = (four * (mass_mu**2)) / q2
     beta2_mu = one - four_mass_mu_over_q2
     beta_mu = tf.sqrt(beta2_mu)
 
-    a_par_l = tf.complex(one + (0 * q2) + (0 / q2), one + (0 * q2) + (0 / q2))
-    a_par_r = tf.complex(one + (0 * q2) + (0 / q2), one + (0 * q2) + (0 / q2))
-    a_perp_l = tf.complex(one + (0 * q2) + (0 / q2), one + (0 * q2) + (0 / q2))
-    a_perp_r = tf.complex(one + (0 * q2) + (0 / q2), one + (0 * q2) + (0 / q2))
-    a_zero_l = tf.complex(one + (0 * q2) + (0 / q2), one + (0 * q2) + (0 / q2))
-    a_zero_r = tf.complex(one + (0 * q2) + (0 / q2), one + (0 * q2) + (0 / q2))
+    # Amplitudes
+    a_par_l = tf.complex(one + (0 * q2) + (0 / q2), two + (0 * q2) + (0 / q2))
+    a_par_r = tf.complex(four + (0 * q2) + (0 / q2), one + (0 * q2) + (0 / q2))
+    a_perp_l = tf.complex(two + (0 * q2) + (0 / q2), four + (0 * q2) + (0 / q2))
+    a_perp_r = tf.complex(one + (0 * q2) + (0 / q2), two + (0 * q2) + (0 / q2))
+    a_zero_l = tf.complex(four + (0 * q2) + (0 / q2), one + (0 * q2) + (0 / q2))
+    a_zero_r = tf.complex(two + (0 * q2) + (0 / q2), four + (0 * q2) + (0 / q2))
 
+    # Transformation angles
+    tan_2omega = two * (
+            (tf.math.imag(a_zero_r) * tf.math.real(a_zero_l)) + (tf.math.imag(a_zero_l) * tf.math.real(a_zero_r))
+    ) / (tf.math.abs(a_zero_r)**2 - tf.math.abs(a_zero_l)**2)
+    omega = tf.math.atan(tan_2omega) / two
+    tan_omega = tf.math.tan(omega)
+    sinh_iomega = tf.cast(tf.math.sinh(tf.complex(0.0, omega)), tf.complex64)
+    cosh_iomega = tf.cast(tf.math.cosh(tf.complex(0.0, omega)), tf.complex64)
+
+    tan_theta = (tf.math.real(a_zero_r) + (tf.math.imag(a_zero_l) * tan_omega)) / \
+        (- tf.math.real(a_zero_l) + (tf.math.imag(a_zero_r) * tan_omega))
+    theta = tf.math.atan(tan_theta)
+    sin_theta = tf.cast(tf.math.sin(theta), tf.complex64)
+    cos_theta = tf.cast(tf.math.cos(theta), tf.complex64)
+
+    tan_phi_l = (
+            tf.math.imag(a_zero_l) +
+            (tf.math.imag(a_zero_r) * tan_theta) -
+            ((tf.math.real(a_zero_r) - (tf.math.real(a_zero_l) * tan_theta)) * tan_omega)
+    ) / (
+        - tf.math.real(a_zero_l) +
+        (tf.math.real(a_zero_r) * tan_theta) +
+        ((tf.math.imag(a_zero_r) + (tf.math.imag(a_zero_l) * tan_theta)) * tan_omega)
+    )
+    phi_l = tf.math.atan(tan_phi_l)
+    exp_iphi_l = tf.cast(tf.math.exp(tf.complex(0.0, phi_l)), tf.complex64)
+
+    tan_phi_r = (
+            tf.math.imag(a_perp_r) +
+            (tf.math.imag(a_perp_l) * tan_theta) -
+            ((tf.math.real(a_perp_l) - (tf.math.real(a_perp_r) * tan_theta)) * tan_omega)
+    ) / (
+            - tf.math.real(a_perp_r) +
+            (tf.math.real(a_perp_l) * tan_theta) +
+            ((tf.math.imag(a_perp_l) + (tf.math.imag(a_perp_r) * tan_theta)) * tan_omega)
+    )
+    phi_r = tf.math.atan(tan_phi_r)
+    exp_miphi_r = tf.cast(tf.math.exp(tf.complex(0.0, - phi_r)), tf.complex64)
+
+    # Basis vectors
+    n_par = tf.Variable([a_par_l, tf.math.conj(a_par_r)])
+    n_perp = tf.Variable([a_perp_l, - tf.math.conj(a_perp_r)])
+    n_zero = tf.Variable([a_zero_l, tf.math.conj(a_zero_r)])
+
+    # Transform matrices
+    # t1 = tf.Variable([
+    #     [exp_iphi_l, tf.constant(tf.complex(0.0, 0.0), shape=[num_rows])],
+    #     [tf.constant(tf.complex(0.0, 0.0), shape=[num_rows]), exp_miphi_r]
+    # ])
+    # t2 = tf.Variable([[cos_theta, - sin_theta], [sin_theta, cos_theta]], dtype=tf.complex64)
+    # t3 = tf.Variable([[cosh_iomega, - sinh_iomega], [-sinh_iomega, cosh_iomega]])
+
+    # Transforms
+    def _transform(n):
+        # x = tf.tensordot(t3, n, axes=[[1, 2], [0, 1]])
+
+        # x = tf.tensordot(t2, x, axes=[[2], [0]])
+        # x = tf.tensordot(t1, x, axes=[[2], [0]])
+        # return tf.tensordot(t1, tf.tensordot(t2, tf.tensordot(t3, n, axes=[[2], [0]]), axes=[[2], [0]]), axes=[[2], [0]])
+        return tf.Variable([
+            exp_iphi_l * (
+                (cos_theta * ((n[0] * cosh_iomega) - n[1] * sinh_iomega)) -
+                (- sin_theta * ((- n[0] * sinh_iomega) + n[1] * cosh_iomega))
+            ),
+            exp_miphi_r * (
+                    (sin_theta * ((n[0] * cosh_iomega) - n[1] * sinh_iomega)) -
+                    (cos_theta * ((- n[0] * sinh_iomega) + n[1] * cosh_iomega))
+            )
+        ])
+
+    # Transformed basis
+    nt_par = _transform(n_par)
+    nt_perp = _transform(n_perp)
+    nt_zero = _transform(n_zero)
+
+    # Transformed amplitudes (w/ basis fixing)
+    a_par_l = nt_par[0]
+    a_par_r = tf.math.conj(nt_par[1])
+    a_perp_l = nt_perp[0]
+    a_perp_r = tf.complex(- tf.math.real(nt_perp[1]), 0.0)
+    a_zero_l = tf.complex(tf.math.real(nt_zero[0]), 0.0)
+    a_zero_r = tf.constant(tf.complex(0.0, 0.0), shape=[num_rows])
+
+    # Angular observables
     j_1s = ((two + beta2_mu) / four)*(
         tf.math.abs(a_perp_l)**2 + tf.math.abs(a_par_l)**2 +
         tf.math.abs(a_perp_r)**2 + tf.math.abs(a_par_r)**2
@@ -157,7 +247,7 @@ def generate_signal(signal_samples, options_num):
     total_decay_rate = tf.reduce_sum(decay_rates)
     _print("total_decay_rate", total_decay_rate)
 
-    probabilities = decay_rates / total_decay_rate
+    probabilities = tf.math.maximum(decay_rates / total_decay_rate, 0.0)
     _print("probabilities", probabilities)
 
     keys = np.random.choice(options.get_shape()[0], signal_samples, p=probabilities.numpy())

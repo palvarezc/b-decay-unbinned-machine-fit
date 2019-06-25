@@ -21,7 +21,7 @@ tfd = tfp.distributions
 # TODO: Split files/Unit tests/comments/doc comments
 
 mass_mu = tf.constant(105.6583745e6)  # in 106 MeV/c^2
-q2_min = tf.constant(2.0e18)  # 2 (GeV/c^2)^2
+q2_min = tf.constant(1.0e18)  # 1 (GeV/c^2)^2
 q2_max = tf.constant(6.0e18)  # 6 (GeV/c^2)^2
 
 

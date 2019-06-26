@@ -16,7 +16,6 @@ tfd = tfp.distributions
 # TODO: Check signal terms
 # TODO: Switch to continuous PDF
 # TODO: Should J transforms be used? (Based on q2 >> ...)
-# TODO: Consistent angle transforms (trig vs pythag)
 # TODO: Convert to tf distribution?
 # TODO: Do fitting
 # TODO: Split files/Unit tests/comments/doc comments

@@ -1,6 +1,7 @@
 ## Requirements
 
-Ensure Tensorflow `1.14` is installed, either via from source or the `tensorflow` or `tensorflow-gpu` pip packages.
+Ensure Tensorflow `1.14` is installed either via from source,
+or the `tensorflow-cpu` or `tensorflow-gpu` pip packages.
 
 Install dependencies:
 ```

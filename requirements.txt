@@ -1,0 +1,4 @@
+matplotlib==3.0.*
+numpy==1.14.5
+seaborn==0.9.*
+tensorflow-probability==0.7.*

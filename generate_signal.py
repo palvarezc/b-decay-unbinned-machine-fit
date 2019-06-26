@@ -18,7 +18,6 @@ tfd = tfp.distributions
 # TODO: Should J transforms be used? (Based on q2 >> ...)
 # TODO: Consistent angle transforms (trig vs pythag)
 # TODO: Convert to tf distribution?
-# TODO: Pip requirements.txt (& test)
 # TODO: Do fitting
 # TODO: Split files/Unit tests/comments/doc comments
 
@@ -225,7 +224,7 @@ def generate_signal(signal_samples, options_num):
     phi_distribution = tfd.Uniform(low=-2*math.pi, high=2*math.pi)
 
     def _print(name, t):
-        tf.print(name, "(shape", tf.shape(t), "):\n", t, output_stream=sys.stdout, end="\n\n")
+        tf.print(name, "(shape:", tf.shape(t), "type:", type(t), "):\n", t, output_stream=sys.stdout, end="\n\n")
 
     q2 = q2_distribution.sample(options_num)
     options = tf.stack(

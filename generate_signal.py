@@ -23,9 +23,9 @@ tfd = tfp.distributions
 # Q: Is signal generation method okay?
 # Q: Should J transforms be used?
 
-mass_mu = tf.constant(105.6583745e6)  # in 106 MeV/c^2
-q2_min = tf.constant(1.0e18)  # 1 (GeV/c^2)^2
-q2_max = tf.constant(6.0e18)  # 6 (GeV/c^2)^2
+mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
+q2_min = tf.constant(1.0)  # 1 (GeV/c^2)^2
+q2_max = tf.constant(6.0)  # 6 (GeV/c^2)^2
 one = tf.constant(1.0)
 two = tf.constant(2.0)
 four = tf.constant(4.0)

@@ -5,6 +5,8 @@ import seaborn as sns
 import sys
 import tensorflow_probability as tfp
 
+from tensorflow.contrib import integrate as tf_integrate
+
 from tensorflow.python import tf2
 if not tf2.enabled():
     import tensorflow.compat.v2 as tf
@@ -13,17 +15,14 @@ if not tf2.enabled():
 
 tfd = tfp.distributions
 
-# TODO: Do fitting
 # TODO: Fix basis fitting
-
-# TODO: n_sig?/normalisation/d_avg_dat?
-# TODO: Check PDF terms
-# TODO: Think about floor functions
+# TODO: Fix fitting/Check one or two parameter fits
+# TODO: maximum likelihood & n_sig?/d_avg_dat?
+# TODO: Check maths terms
 # TODO: https://www.tensorflow.org/beta/guide/autograph
 # TODO: Switch to accept-reject/monte-carlo. Increase sample size
 # TODO: Add fitting graphs
-# TODO: Normalise variables?
-# TODO: Do ensambles & plot distributions
+# TODO: Do ensembles & plot distributions
 # TODO: Use Keras?
 # TODO: Optimise hyperparameters, optimiser, model
 # TODO: Split files/Convert to tf distribution?/Unit tests/method params/comments/doc comments
@@ -224,20 +223,6 @@ def decay_rate(q2, cos_theta_k, cos_theta_l, phi, amplitudes):
         tf.math.imag(tf.math.conj(a_par_r) * a_perp_r)
     )
 
-    observables = tf.stack([
-        j_1s,
-        j_1c,
-        j_2s,
-        j_2c,
-        j_3,
-        j_4,
-        j_5,
-        j_6s,
-        j_7,
-        j_8,
-        j_9
-    ])
-
     rate = (9 / (32 * math.pi)) * (
         (j_1s * sin2_theta_k) +
         (j_1c * cos2_theta_k) +
@@ -252,7 +237,7 @@ def decay_rate(q2, cos_theta_k, cos_theta_l, phi, amplitudes):
         (j_9 * sin_2theta_k * sin_2theta_l * sin_2phi)
     )
 
-    return [observables, rate]
+    return rate
 
 
 def coeffs_to_amplitudes(q2, all_coeffs):
@@ -290,38 +275,22 @@ def generate_signal(signal_samples, options_num):
 
     _print("signal_coeffs", signal_coeffs)
 
-    # Signal values for original amplitudes
-    original_amplitudes = coeffs_to_amplitudes(q2, signal_coeffs)
-    _print("signal_amplitudes", original_amplitudes)
-
-    #transformed_amplitudes = transform_amplitudes(original_amplitudes)
-    transformed_amplitudes = original_amplitudes
-    _print("transformed_amplitudes", transformed_amplitudes)
-
-    [observables, decay_rates] = \
-        decay_rate(options[:, 0], options[:, 1], options[:, 2], options[:, 3], transformed_amplitudes)
-    _print("observables", observables)
-    _print("decay_rates", decay_rates)
-
-    total_decay_rate = tf.reduce_sum(decay_rates)
-    _print("total_decay_rate", total_decay_rate)
-
-    probabilities = tf.math.maximum(decay_rates / total_decay_rate, 0.0)
+    probabilities = pdf(options, signal_coeffs)
     _print("probabilities", probabilities)
 
-    keys = np.random.choice(options.get_shape()[0], signal_samples, p=probabilities.numpy())
+    total_probs = tf.reduce_sum(probabilities)
+    _print("total_probs", total_probs)
+
+    option_probs = probabilities / total_probs
+    _print("option_probs", option_probs)
+
+    keys = np.random.choice(options.get_shape()[0], signal_samples, p=option_probs.numpy())
     _print("keys", keys)
 
     signal = tf.gather(options, keys)
     _print("signal", signal)
 
-    signal_decay_rates = tf.gather(decay_rates, keys)
-    _print("signal_decay_rates", signal_decay_rates)
-
-    signal_observables = tf.gather(observables, keys, axis=1)
-    _print("signal_observables", signal_observables)
-
-    return [signal, signal_decay_rates, signal_observables]
+    return signal
 
 
 def build_coeff_structure(flat_coeffs):
@@ -335,25 +304,10 @@ def build_coeff_structure(flat_coeffs):
     ]
 
 
-def generate_attempt(independent_vars_, amplitudes):
-    attempt_coeffs = build_coeff_structure(amplitudes)
-    transformed_amplitudes = coeffs_to_amplitudes(independent_vars_[:, 0], attempt_coeffs)
-
-    [observables, decay_rates] = decay_rate(
-        independent_vars_[:, 0],
-        independent_vars_[:, 1],
-        independent_vars_[:, 2],
-        independent_vars_[:, 3],
-        transformed_amplitudes
-    )
-
-    return [decay_rates, observables]
-
-
 def nll(independent_vars_, fit_coeffs_):
-    [fit_decay_rates_, _] = generate_attempt(independent_vars_, fit_coeffs_)
-    v1 = tf.math.maximum(fit_decay_rates_, 1e-20)
-    v2 = -tf.math.log(v1)
+    coeff_struct_ = build_coeff_structure(fit_coeffs_)
+    fit_probs_ = pdf(independent_vars_, coeff_struct_)
+    v2 = -tf.math.log(fit_probs_)
     v3 = -tf.reduce_sum(v2) / independent_vars_.get_shape()[0]
     return v3
 
@@ -366,13 +320,76 @@ def coeffs_to_string(coeffs):
                 if coeff is zero:
                     coeffs_strs.append(' *0.0*')
                 else:
-                    coeffs_strs.append('{:5.2f}'.format(coeff.numpy() if hasattr(coeff, 'numpy') else coeff))
+                    coeffs_strs.append('{:6.2f}'.format(coeff.numpy() if hasattr(coeff, 'numpy') else coeff))
     return ' '.join(coeffs_strs)
+
+
+def integrated_decay_rate(q2, amplitudes):
+    # https://arxiv.org/abs/1202.4266
+    # @see notebook
+
+    [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = amplitudes
+
+    # Mass terms
+    four_mass_mu_over_q2 = (four * (mass_mu ** 2)) / q2
+    beta2_mu = one - four_mass_mu_over_q2
+
+    # Angular observables
+    j_1s = ((two + beta2_mu) / four) * (
+        tf.math.abs(a_perp_l) ** 2 + tf.math.abs(a_par_l) ** 2 +
+        tf.math.abs(a_perp_r) ** 2 + tf.math.abs(a_par_r) ** 2
+    ) + four_mass_mu_over_q2 * tf.math.real(
+        a_perp_l * tf.math.conj(a_perp_r) +
+        a_par_l * tf.math.conj(a_par_r)
+    )
+
+    j_1c = tf.math.abs(a_zero_l) ** 2 + tf.math.abs(a_zero_r) ** 2 + \
+        four_mass_mu_over_q2 * (2 * tf.math.real(a_zero_l * tf.math.conj(a_zero_r)))
+
+    j_2s = (beta2_mu / four) * (
+        tf.math.abs(a_perp_l) ** 2 + tf.math.abs(a_par_l) ** 2 +
+        tf.math.abs(a_perp_r) ** 2 + tf.math.abs(a_par_r) ** 2
+    )
+
+    j_2c = (- beta2_mu) * (tf.math.abs(a_zero_l) ** 2 + tf.math.abs(a_zero_r) ** 2)
+
+    rate = (1/4) * ((3 * j_1c) + (6 * j_1s) - j_2c - (2 * j_2s))
+
+    return rate
+
+
+def integrate_decay_rate(amplitude_coeffs_):
+    def _integrate(_, q2):
+        amplitudes = coeffs_to_amplitudes(q2, amplitude_coeffs_)
+        rate_function = integrated_decay_rate(q2, amplitudes)
+        return rate_function
+
+    integrate_range = tf.constant([q2_min.numpy(), q2_max.numpy()], dtype=tf.float32)
+    #v = tf_integrate.odeint_fixed(_integrate, 0.0, integrate_range, method="rk4")
+    v = tf_integrate.odeint(_integrate, 0.0, integrate_range)
+
+    return v[1]
+
+
+def pdf(independent_vars_, amplitudes):
+    transformed_amplitudes = coeffs_to_amplitudes(independent_vars_[:, 0], amplitudes)
+
+    decay_rates = decay_rate(
+        independent_vars_[:, 0],
+        independent_vars_[:, 1],
+        independent_vars_[:, 2],
+        independent_vars_[:, 3],
+        transformed_amplitudes
+    )
+
+    f = integrate_decay_rate(amplitudes)
+
+    return tf.math.maximum(decay_rates / f, 1e-30)
 
 
 #######################
 
-[independent_vars, _, _] = generate_signal(100_000, 10_000_000)
+independent_vars = generate_signal(100_000, 10_000_000)
 
 fig, axes = plt.subplots(nrows=2, ncols=2)
 fig.suptitle('Signal distributions')
@@ -393,25 +410,21 @@ plt.show()
 
 fit_coeffs = [tf.Variable(1.0, name='c{0}'.format(i)) for i in range(24)]
 
-optimizer = tf.optimizers.Nadam()
+# optimizer = tf.optimizers.Nadam(learning_rate=0.5)
 # optimizer = tf.optimizers.Adam(learning_rate=0.01)
-# optimizer = tf.optimizers.SGD(learning_rate=0.1)
+optimizer = tf.optimizers.SGD(learning_rate=0.01, momentum=0.01)
+# optimizer = tf.optimizers.Adadelta()
 
-print("Initial loss: {:.3f}".format(nll(independent_vars, fit_coeffs)))
+print("Initial nll: {:.3f}".format(nll(independent_vars, fit_coeffs)))
 
 # Training loop
-for i in range(200):
+for i in range(10000):
     optimizer.minimize(
         lambda: nll(independent_vars, fit_coeffs),
         var_list=fit_coeffs
     )
     if i % 20 == 0:
-        print(
-            "Step {:03d}. nll: {:.3f} fit_coeffs: {}".format(
-                i,
-                nll(independent_vars, fit_coeffs),
-                coeffs_to_string(build_coeff_structure(fit_coeffs))
-            )
-        )
-        print("                  signal_coeffs: {}".format(coeffs_to_string(signal_coeffs)))
+        print("Step {:03d}. nll: {:.3f}".format(i, nll(independent_vars, fit_coeffs)))
+        print("fit:    {}".format(coeffs_to_string(build_coeff_structure(fit_coeffs))))
+        print("signal: {}".format(coeffs_to_string(signal_coeffs)))
 

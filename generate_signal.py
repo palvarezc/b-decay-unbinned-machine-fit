@@ -17,7 +17,6 @@ tfd = tfp.distributions
 
 # TODO: Fix basis fitting
 # TODO: Fix fitting/Check one or two parameter fits
-# TODO: maximum likelihood & n_sig?/d_avg_dat?
 # TODO: Check maths terms
 # TODO: https://www.tensorflow.org/beta/guide/autograph
 # TODO: Switch to accept-reject/monte-carlo. Increase sample size
@@ -240,90 +239,6 @@ def decay_rate(q2, cos_theta_k, cos_theta_l, phi, amplitudes):
     return rate
 
 
-def coeffs_to_amplitudes(q2, all_coeffs):
-    amplitudes = []
-    for amplitude_coeffs in all_coeffs:
-        components = []
-        for component_coeffs in amplitude_coeffs:
-            components.append(component_coeffs[0] + (component_coeffs[1] * q2) + (component_coeffs[2] / q2))
-        amplitudes.append(tf.complex(components[0], components[1]))
-
-    return amplitudes
-
-
-def generate_signal(signal_samples, options_num):
-    q2_distribution = tfd.Uniform(low=q2_min, high=q2_max)
-    cos_theta_k_distribution = tfd.Uniform(low=-1.0, high=1.0)
-    cos_theta_l_distribution = tfd.Uniform(low=-1.0, high=1.0)
-    phi_distribution = tfd.Uniform(low=-math.pi, high=math.pi)
-
-    def _print(name, t):
-        tf.print(name, "(shape:", tf.shape(t), "type:", type(t), "):\n", t, output_stream=sys.stdout, end="\n\n")
-
-    q2 = q2_distribution.sample(options_num)
-    options = tf.stack(
-        [
-            q2,
-            cos_theta_k_distribution.sample(options_num),
-            cos_theta_l_distribution.sample(options_num),
-            phi_distribution.sample(options_num)
-        ],
-        axis=1,
-        name='signal_options'
-    )
-    _print("options", options)
-
-    _print("signal_coeffs", signal_coeffs)
-
-    probabilities = pdf(options, signal_coeffs)
-    _print("probabilities", probabilities)
-
-    total_probs = tf.reduce_sum(probabilities)
-    _print("total_probs", total_probs)
-
-    option_probs = probabilities / total_probs
-    _print("option_probs", option_probs)
-
-    keys = np.random.choice(options.get_shape()[0], signal_samples, p=option_probs.numpy())
-    _print("keys", keys)
-
-    signal = tf.gather(options, keys)
-    _print("signal", signal)
-
-    return signal
-
-
-def build_coeff_structure(flat_coeffs):
-    return [
-        [flat_coeffs[0:3],   flat_coeffs[3:6]],
-        [flat_coeffs[6:9],   flat_coeffs[9:12]],
-        [flat_coeffs[12:15], flat_coeffs[15:18]],
-        [flat_coeffs[18:21], [zero, zero, zero]],
-        [flat_coeffs[21:24], [zero, zero, zero]],
-        [[zero, zero, zero], [zero, zero, zero]],
-    ]
-
-
-def nll(independent_vars_, fit_coeffs_):
-    coeff_struct_ = build_coeff_structure(fit_coeffs_)
-    fit_probs_ = pdf(independent_vars_, coeff_struct_)
-    v2 = -tf.math.log(fit_probs_)
-    v3 = -tf.reduce_sum(v2) / independent_vars_.get_shape()[0]
-    return v3
-
-
-def coeffs_to_string(coeffs):
-    coeffs_strs = []
-    for amp_coeffs in coeffs:
-        for comp_coeffs in amp_coeffs:
-            for coeff in comp_coeffs:
-                if coeff is zero:
-                    coeffs_strs.append(' *0.0*')
-                else:
-                    coeffs_strs.append('{:6.2f}'.format(coeff.numpy() if hasattr(coeff, 'numpy') else coeff))
-    return ' '.join(coeffs_strs)
-
-
 def integrated_decay_rate(q2, amplitudes):
     # https://arxiv.org/abs/1202.4266
     # @see notebook
@@ -385,6 +300,90 @@ def pdf(independent_vars_, amplitudes):
     f = integrate_decay_rate(amplitudes)
 
     return tf.math.maximum(decay_rates / f, 1e-30)
+
+
+def coeffs_to_amplitudes(q2, all_coeffs):
+    amplitudes = []
+    for amplitude_coeffs in all_coeffs:
+        components = []
+        for component_coeffs in amplitude_coeffs:
+            components.append(component_coeffs[0] + (component_coeffs[1] * q2) + (component_coeffs[2] / q2))
+        amplitudes.append(tf.complex(components[0], components[1]))
+
+    return amplitudes
+
+
+def build_coeff_structure(flat_coeffs):
+    return [
+        [flat_coeffs[0:3],   flat_coeffs[3:6]],
+        [flat_coeffs[6:9],   flat_coeffs[9:12]],
+        [flat_coeffs[12:15], flat_coeffs[15:18]],
+        [flat_coeffs[18:21], [zero, zero, zero]],
+        [flat_coeffs[21:24], [zero, zero, zero]],
+        [[zero, zero, zero], [zero, zero, zero]],
+    ]
+
+
+def coeffs_to_string(coeffs):
+    coeffs_strs = []
+    for amp_coeffs in coeffs:
+        for comp_coeffs in amp_coeffs:
+            for coeff in comp_coeffs:
+                if coeff is zero:
+                    coeffs_strs.append(' *0.0*')
+                else:
+                    coeffs_strs.append('{:6.2f}'.format(coeff.numpy() if hasattr(coeff, 'numpy') else coeff))
+    return ' '.join(coeffs_strs)
+
+
+def generate_signal(signal_samples, options_num):
+    q2_distribution = tfd.Uniform(low=q2_min, high=q2_max)
+    cos_theta_k_distribution = tfd.Uniform(low=-1.0, high=1.0)
+    cos_theta_l_distribution = tfd.Uniform(low=-1.0, high=1.0)
+    phi_distribution = tfd.Uniform(low=-math.pi, high=math.pi)
+
+    def _print(name, t):
+        tf.print(name, "(shape:", tf.shape(t), "type:", type(t), "):\n", t, output_stream=sys.stdout, end="\n\n")
+
+    q2 = q2_distribution.sample(options_num)
+    options = tf.stack(
+        [
+            q2,
+            cos_theta_k_distribution.sample(options_num),
+            cos_theta_l_distribution.sample(options_num),
+            phi_distribution.sample(options_num)
+        ],
+        axis=1,
+        name='signal_options'
+    )
+    _print("options", options)
+
+    _print("signal_coeffs", signal_coeffs)
+
+    probabilities = pdf(options, signal_coeffs)
+    _print("probabilities", probabilities)
+
+    total_probs = tf.reduce_sum(probabilities)
+    _print("total_probs", total_probs)
+
+    option_probs = probabilities / total_probs
+    _print("option_probs", option_probs)
+
+    keys = np.random.choice(options.get_shape()[0], signal_samples, p=option_probs.numpy())
+    _print("keys", keys)
+
+    signal = tf.gather(options, keys)
+    _print("signal", signal)
+
+    return signal
+
+
+def nll(independent_vars_, fit_coeffs_):
+    coeff_struct_ = build_coeff_structure(fit_coeffs_)
+    fit_probs_ = pdf(independent_vars_, coeff_struct_)
+    v2 = -tf.math.log(fit_probs_)
+    v3 = -tf.reduce_sum(v2) / independent_vars_.get_shape()[0]
+    return v3
 
 
 #######################

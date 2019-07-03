@@ -240,7 +240,7 @@ def decay_rate(signal_events_, amplitude_coeffs):
     return rate
 
 
-def integrated_decay_rate(q2, amplitude_coeffs):
+def decay_rate_angle_integrated(q2, amplitude_coeffs):
     # https://arxiv.org/abs/1202.4266
     # @see notebook
 
@@ -276,14 +276,14 @@ def integrated_decay_rate(q2, amplitude_coeffs):
 
 def integrate_decay_rate(amplitude_coeffs_):
     # return tf_integrate.odeint_fixed(
-    #     lambda _, q2: integrated_decay_rate(q2, amplitude_coeffs_),
+    #     lambda _, q2: decay_rate_angle_integrated(q2, amplitude_coeffs_),
     #     0.0,
     #     tf.stack([q2_min, q2_max]),
     #     dt=tf.constant(0.1, dtype=tf.float32),
     #     method="rk4"
     # )[1]
     return tf_integrate.odeint(
-        lambda _, q2: integrated_decay_rate(q2, amplitude_coeffs_),
+        lambda _, q2: decay_rate_angle_integrated(q2, amplitude_coeffs_),
         0.0,
         tf.stack([q2_min, q2_max]),
         rtol=1e-3,
@@ -375,10 +375,10 @@ def generate_signal(events_num, options_num):
 
 def nll(signal_events_, fit_coeffs_):
     coeff_struct_ = build_coeff_structure(fit_coeffs_)
-    fit_probs_ = pdf(signal_events_, coeff_struct_)
-    v2 = -tf.math.log(fit_probs_)
-    v3 = -tf.reduce_sum(v2) / signal_events_.get_shape()[0]
-    return v3
+    probs_ = pdf(signal_events_, coeff_struct_)
+    nlog_probs = -tf.math.log(probs_)
+    nll_ = -tf.reduce_sum(nlog_probs) / signal_events_.get_shape()[0]
+    return nll_
 
 
 #######################

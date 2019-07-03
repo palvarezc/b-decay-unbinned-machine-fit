@@ -5,26 +5,27 @@ import seaborn as sns
 import sys
 import tensorflow_probability as tfp
 
-from tensorflow.contrib import integrate as tf_integrate
-
 from tensorflow.python import tf2
 if not tf2.enabled():
     import tensorflow.compat.v2 as tf
     tf.enable_v2_behavior()
     assert tf2.enabled()
 
+# Import this separately as its old v1 code
+from tensorflow.contrib import integrate as tf_integrate
+
+# tf.debugging.set_log_device_placement(True)
+
 tfd = tfp.distributions
 
 # TODO: Fix basis fitting
 # TODO: Fix fitting/Check one or two parameter fits
 # TODO: Check maths terms
-# TODO: https://www.tensorflow.org/beta/guide/autograph
 # TODO: Switch to accept-reject/monte-carlo. Increase sample size
 # TODO: Add fitting graphs
 # TODO: Do ensembles & plot distributions
-# TODO: Use Keras?
 # TODO: Optimise hyperparameters, optimiser, model
-# TODO: Split files/Convert to tf distribution?/Unit tests/method params/comments/doc comments
+# TODO: Split files/Keras?/Convert to tf distribution?/Unit tests/method params/comments/doc comments
 
 mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
 q2_min = tf.constant(1.0)  # 1 (GeV/c^2)^2
@@ -143,6 +144,7 @@ signal_coeffs = [
 #     return [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r]
 
 
+@tf.function
 def decay_rate(signal_events_, amplitude_coeffs):
     [q2, cos_theta_k, cos_theta_l, phi] = tf.unstack(signal_events_, axis=1)
     [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = coeffs_to_amplitudes(q2, amplitude_coeffs)
@@ -240,6 +242,7 @@ def decay_rate(signal_events_, amplitude_coeffs):
     return rate
 
 
+@tf.function
 def decay_rate_angle_integrated(q2, amplitude_coeffs):
     # https://arxiv.org/abs/1202.4266
     # @see notebook
@@ -275,25 +278,24 @@ def decay_rate_angle_integrated(q2, amplitude_coeffs):
 
 
 def integrate_decay_rate(amplitude_coeffs_):
-    # return tf_integrate.odeint_fixed(
-    #     lambda _, q2: decay_rate_angle_integrated(q2, amplitude_coeffs_),
-    #     0.0,
-    #     tf.stack([q2_min, q2_max]),
-    #     dt=tf.constant(0.1, dtype=tf.float32),
-    #     method="rk4"
-    # )[1]
     return tf_integrate.odeint(
         lambda _, q2: decay_rate_angle_integrated(q2, amplitude_coeffs_),
         0.0,
         tf.stack([q2_min, q2_max]),
-        rtol=1e-3,
-        atol=1e-3
+        rtol=1e-4,
+        atol=1e-2,
     )[1]
 
 
+# A @tf.function decoration makes this 3-3.5x faster, however as odeint() is not Tensorflow v2
+#  compatible, after 1000s of iterations the gradients can all come randomly back as NaN. Very sad.
+#  This error manifests itself as odeint complaining of a float (dt) underflow.
+#  If odeint() is ported to tf_scientific then remove the decoration from child functions and add it here.
 def pdf(signal_events_, amplitude_coeffs_):
-    decay_rates = decay_rate(signal_events_, amplitude_coeffs_)
-    norm = integrate_decay_rate(amplitude_coeffs_)
+    # Forcing the GPU here is about 25% faster. Might no longer be needed with @tf.function decoration
+    with tf.device('/device:GPU:0'):
+        decay_rates = decay_rate(signal_events_, amplitude_coeffs_)
+        norm = integrate_decay_rate(amplitude_coeffs_)
     return tf.math.maximum(decay_rates / norm, 1e-30)
 
 
@@ -405,9 +407,8 @@ plt.show()
 fit_coeffs = [tf.Variable(1.0, name='c{0}'.format(i)) for i in range(24)]
 
 # optimizer = tf.optimizers.Nadam(learning_rate=0.5)
-# optimizer = tf.optimizers.Adam(learning_rate=0.01)
-optimizer = tf.optimizers.SGD(learning_rate=0.01, momentum=0.01)
-# optimizer = tf.optimizers.Adadelta()
+optimizer = tf.optimizers.Adam(learning_rate=0.01)
+# optimizer = tf.optimizers.SGD(learning_rate=0.01, momentum=0.01)
 
 print("Initial nll: {:.3f}".format(nll(signal_events, fit_coeffs)))
 

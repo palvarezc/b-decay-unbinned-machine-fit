@@ -281,7 +281,7 @@ def integrate_decay_rate(amplitude_coeffs_):
 
     integrate_range = tf.constant([q2_min.numpy(), q2_max.numpy()], dtype=tf.float32)
     #v = tf_integrate.odeint_fixed(_integrate, 0.0, integrate_range, method="rk4")
-    v = tf_integrate.odeint(_integrate, 0.0, integrate_range)
+    v = tf_integrate.odeint(_integrate, 0.0, integrate_range, rtol=1e-3, atol=1e-3)
 
     return v[1]
 

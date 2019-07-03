@@ -275,22 +275,25 @@ def integrated_decay_rate(q2, amplitude_coeffs):
 
 
 def integrate_decay_rate(amplitude_coeffs_):
-    def _integrate(_, q2):
-        rate_function = integrated_decay_rate(q2, amplitude_coeffs_)
-        return rate_function
-
-    integrate_range = tf.constant([q2_min.numpy(), q2_max.numpy()], dtype=tf.float32)
-    #v = tf_integrate.odeint_fixed(_integrate, 0.0, integrate_range, method="rk4")
-    v = tf_integrate.odeint(_integrate, 0.0, integrate_range, rtol=1e-3, atol=1e-3)
-
-    return v[1]
+    # return tf_integrate.odeint_fixed(
+    #     lambda _, q2: integrated_decay_rate(q2, amplitude_coeffs_),
+    #     0.0,
+    #     tf.stack([q2_min, q2_max]),
+    #     dt=tf.constant(0.1, dtype=tf.float32),
+    #     method="rk4"
+    # )[1]
+    return tf_integrate.odeint(
+        lambda _, q2: integrated_decay_rate(q2, amplitude_coeffs_),
+        0.0,
+        tf.stack([q2_min, q2_max]),
+        rtol=1e-3,
+        atol=1e-3
+    )[1]
 
 
 def pdf(signal_events_, amplitude_coeffs_):
     decay_rates = decay_rate(signal_events_, amplitude_coeffs_)
-
     norm = integrate_decay_rate(amplitude_coeffs_)
-
     return tf.math.maximum(decay_rates / norm, 1e-30)
 
 

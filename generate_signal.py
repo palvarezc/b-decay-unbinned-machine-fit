@@ -5,14 +5,14 @@ import seaborn as sns
 import sys
 import tensorflow_probability as tfp
 
+# Import this separately as its old Tensorflow v1 code
+from tensorflow.contrib import integrate as tf_integrate
+
 from tensorflow.python import tf2
 if not tf2.enabled():
     import tensorflow.compat.v2 as tf
     tf.enable_v2_behavior()
     assert tf2.enabled()
-
-# Import this separately as its old v1 code
-from tensorflow.contrib import integrate as tf_integrate
 
 # tf.debugging.set_log_device_placement(True)
 

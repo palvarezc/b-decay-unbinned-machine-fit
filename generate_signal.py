@@ -143,8 +143,9 @@ signal_coeffs = [
 #     return [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r]
 
 
-def decay_rate(q2, cos_theta_k, cos_theta_l, phi, amplitudes):
-    [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = amplitudes
+def decay_rate(signal_events_, amplitude_coeffs):
+    [q2, cos_theta_k, cos_theta_l, phi] = tf.unstack(signal_events_, axis=1)
+    [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = coeffs_to_amplitudes(q2, amplitude_coeffs)
 
     # Angles
     cos2_theta_k = cos_theta_k**2
@@ -239,11 +240,11 @@ def decay_rate(q2, cos_theta_k, cos_theta_l, phi, amplitudes):
     return rate
 
 
-def integrated_decay_rate(q2, amplitudes):
+def integrated_decay_rate(q2, amplitude_coeffs):
     # https://arxiv.org/abs/1202.4266
     # @see notebook
 
-    [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = amplitudes
+    [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = coeffs_to_amplitudes(q2, amplitude_coeffs)
 
     # Mass terms
     four_mass_mu_over_q2 = (four * (mass_mu ** 2)) / q2
@@ -275,8 +276,7 @@ def integrated_decay_rate(q2, amplitudes):
 
 def integrate_decay_rate(amplitude_coeffs_):
     def _integrate(_, q2):
-        amplitudes = coeffs_to_amplitudes(q2, amplitude_coeffs_)
-        rate_function = integrated_decay_rate(q2, amplitudes)
+        rate_function = integrated_decay_rate(q2, amplitude_coeffs_)
         return rate_function
 
     integrate_range = tf.constant([q2_min.numpy(), q2_max.numpy()], dtype=tf.float32)
@@ -286,20 +286,12 @@ def integrate_decay_rate(amplitude_coeffs_):
     return v[1]
 
 
-def pdf(independent_vars_, amplitudes):
-    transformed_amplitudes = coeffs_to_amplitudes(independent_vars_[:, 0], amplitudes)
+def pdf(signal_events_, amplitude_coeffs_):
+    decay_rates = decay_rate(signal_events_, amplitude_coeffs_)
 
-    decay_rates = decay_rate(
-        independent_vars_[:, 0],
-        independent_vars_[:, 1],
-        independent_vars_[:, 2],
-        independent_vars_[:, 3],
-        transformed_amplitudes
-    )
+    norm = integrate_decay_rate(amplitude_coeffs_)
 
-    f = integrate_decay_rate(amplitudes)
-
-    return tf.math.maximum(decay_rates / f, 1e-30)
+    return tf.math.maximum(decay_rates / norm, 1e-30)
 
 
 def coeffs_to_amplitudes(q2, all_coeffs):
@@ -336,7 +328,7 @@ def coeffs_to_string(coeffs):
     return ' '.join(coeffs_strs)
 
 
-def generate_signal(signal_samples, options_num):
+def generate_signal(events_num, options_num):
     q2_distribution = tfd.Uniform(low=q2_min, high=q2_max)
     cos_theta_k_distribution = tfd.Uniform(low=-1.0, high=1.0)
     cos_theta_l_distribution = tfd.Uniform(low=-1.0, high=1.0)
@@ -369,26 +361,26 @@ def generate_signal(signal_samples, options_num):
     option_probs = probabilities / total_probs
     _print("option_probs", option_probs)
 
-    keys = np.random.choice(options.get_shape()[0], signal_samples, p=option_probs.numpy())
+    keys = np.random.choice(options.get_shape()[0], events_num, p=option_probs.numpy())
     _print("keys", keys)
 
-    signal = tf.gather(options, keys)
-    _print("signal", signal)
+    signal_events_ = tf.gather(options, keys)
+    _print("signal", signal_events_)
 
-    return signal
+    return signal_events_
 
 
-def nll(independent_vars_, fit_coeffs_):
+def nll(signal_events_, fit_coeffs_):
     coeff_struct_ = build_coeff_structure(fit_coeffs_)
-    fit_probs_ = pdf(independent_vars_, coeff_struct_)
+    fit_probs_ = pdf(signal_events_, coeff_struct_)
     v2 = -tf.math.log(fit_probs_)
-    v3 = -tf.reduce_sum(v2) / independent_vars_.get_shape()[0]
+    v3 = -tf.reduce_sum(v2) / signal_events_.get_shape()[0]
     return v3
 
 
 #######################
 
-independent_vars = generate_signal(100_000, 10_000_000)
+signal_events = generate_signal(100_000, 10_000_000)
 
 fig, axes = plt.subplots(nrows=2, ncols=2)
 fig.suptitle('Signal distributions')
@@ -399,7 +391,7 @@ titles = [
     r'$\phi$'
 ]
 
-for ax, feature, title in zip(axes.flatten(), independent_vars.numpy().transpose(), titles):
+for ax, feature, title in zip(axes.flatten(), signal_events.numpy().transpose(), titles):
     sns.distplot(feature, ax=ax, bins=20)
     ax.set(title=title)
 
@@ -414,16 +406,16 @@ fit_coeffs = [tf.Variable(1.0, name='c{0}'.format(i)) for i in range(24)]
 optimizer = tf.optimizers.SGD(learning_rate=0.01, momentum=0.01)
 # optimizer = tf.optimizers.Adadelta()
 
-print("Initial nll: {:.3f}".format(nll(independent_vars, fit_coeffs)))
+print("Initial nll: {:.3f}".format(nll(signal_events, fit_coeffs)))
 
 # Training loop
 for i in range(10000):
     optimizer.minimize(
-        lambda: nll(independent_vars, fit_coeffs),
+        lambda: nll(signal_events, fit_coeffs),
         var_list=fit_coeffs
     )
     if i % 20 == 0:
-        print("Step {:03d}. nll: {:.3f}".format(i, nll(independent_vars, fit_coeffs)))
+        print("Step {:03d}. nll: {:.3f}".format(i, nll(signal_events, fit_coeffs)))
         print("fit:    {}".format(coeffs_to_string(build_coeff_structure(fit_coeffs))))
         print("signal: {}".format(coeffs_to_string(signal_coeffs)))
 

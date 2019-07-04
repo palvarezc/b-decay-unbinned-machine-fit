@@ -67,22 +67,35 @@ def _decay_rate(signal_events_, coeffs):
     sin_2phi = tf.math.sin(two * phi)
 
     # Mass terms
-    four_mass_mu_over_q2 = (four * (mass_mu ** 2)) / q2
-    beta2_mu = one - four_mass_mu_over_q2
-    beta_mu = tf.sqrt(beta2_mu)
+    four_mass2_over_q2 = _four_mass2_over_q2(q2)
+    beta2 = _beta2(four_mass2_over_q2)
+    beta = tf.sqrt(beta2)
+
+    # Observables
+    j1s = _j1s(amplitudes, beta2, four_mass2_over_q2)
+    j1c = _j1c(amplitudes, four_mass2_over_q2)
+    j2s = _j2s(amplitudes, beta2)
+    j2c = _j2c(amplitudes, beta2)
+    j3 = _j3(amplitudes, beta2)
+    j4 = _j4(amplitudes, beta2)
+    j5 = _j5(amplitudes, beta)
+    j6s = _j6s(amplitudes, beta)
+    j7 = _j7(amplitudes, beta)
+    j8 = _j8(amplitudes, beta2)
+    j9 = _j9(amplitudes, beta2)
 
     return (9 / (32 * math.pi)) * (
-        (_j1s(amplitudes, beta2_mu,  four_mass_mu_over_q2) * sin2_theta_k) +
-        (_j1c(amplitudes, four_mass_mu_over_q2) * cos2_theta_k) +
-        (_j2s(amplitudes, beta2_mu) * sin2_theta_k * cos_2theta_l) +
-        (_j2c(amplitudes, beta2_mu) * cos2_theta_k * cos_2theta_l) +
-        (_j3(amplitudes, beta2_mu) * sin2_theta_k * sin2_theta_l * cos_2phi) +
-        (_j4(amplitudes, beta2_mu) * sin_2theta_k * sin_2theta_l * cos_phi) +
-        (_j5(amplitudes, beta_mu) * sin_2theta_k * sin_theta_l * cos_phi) +
-        (_j6s(amplitudes, beta_mu) * sin2_theta_k * cos_theta_l) +
-        (_j7(amplitudes, beta_mu) * sin_2theta_k * sin_theta_l * sin_phi) +
-        (_j8(amplitudes, beta2_mu) * sin_2theta_k * sin_2theta_l * sin_phi) +
-        (_j9(amplitudes, beta2_mu) * sin_2theta_k * sin_2theta_l * sin_2phi)
+        (j1s * sin2_theta_k) +
+        (j1c * cos2_theta_k) +
+        (j2s * sin2_theta_k * cos_2theta_l) +
+        (j2c * cos2_theta_k * cos_2theta_l) +
+        (j3 * sin2_theta_k * sin2_theta_l * cos_2phi) +
+        (j4 * sin_2theta_k * sin_2theta_l * cos_phi) +
+        (j5 * sin_2theta_k * sin_theta_l * cos_phi) +
+        (j6s * sin2_theta_k * cos_theta_l) +
+        (j7 * sin_2theta_k * sin_theta_l * sin_phi) +
+        (j8 * sin_2theta_k * sin_2theta_l * sin_phi) +
+        (j9 * sin_2theta_k * sin_2theta_l * sin_2phi)
     )
 
 
@@ -93,32 +106,46 @@ def _decay_rate_angle_integrated(q2, coeffs):
     amplitudes = _coeffs_to_amplitudes(q2, coeffs)
 
     # Mass terms
-    four_mass_mu_over_q2 = (four * (mass_mu ** 2)) / q2
-    beta2_mu = one - four_mass_mu_over_q2
+    four_mass2_over_q2 = _four_mass2_over_q2(q2)
+    beta2 = _beta2(four_mass2_over_q2)
+
+    # Observables
+    j1s = _j1s(amplitudes, beta2, four_mass2_over_q2)
+    j1c = _j1c(amplitudes, four_mass2_over_q2)
+    j2s = _j2s(amplitudes, beta2)
+    j2c = _j2c(amplitudes, beta2)
 
     return (1 / 4) * (
-        (6 * _j1s(amplitudes, beta2_mu,  four_mass_mu_over_q2)) +
-        (3 * _j1c(amplitudes, four_mass_mu_over_q2)) -
-        (2 * _j2s(amplitudes, beta2_mu)) -
-        _j2c(amplitudes, beta2_mu)
+        (6 * j1s) +
+        (3 * j1c) -
+        (2 * j2s) -
+        j2c
     )
 
 
-def _j1s(amplitudes, beta2_mu, four_mass_mu_over_q2):
+def _four_mass2_over_q2(q2):
+    return (four * (mass_mu ** 2)) / q2
+
+
+def _beta2(four_mass2_over_q2):
+    return one - four_mass2_over_q2
+
+
+def _j1s(amplitudes, beta2_mu, four_mass2_over_q2):
     [a_par_l, a_par_r, a_perp_l, a_perp_r, _, _] = amplitudes
     return ((two + beta2_mu) / four) * (
         tf.math.abs(a_perp_l) ** 2 + tf.math.abs(a_par_l) ** 2 +
         tf.math.abs(a_perp_r) ** 2 + tf.math.abs(a_par_r) ** 2
-    ) + four_mass_mu_over_q2 * tf.math.real(
+    ) + four_mass2_over_q2 * tf.math.real(
         a_perp_l * tf.math.conj(a_perp_r) +
         a_par_l * tf.math.conj(a_par_r)
     )
 
 
-def _j1c(amplitudes, four_mass_mu_over_q2):
+def _j1c(amplitudes, four_mass2_over_q2):
     [_, _, _, _, a_zero_l, a_zero_r] = amplitudes
     return tf.math.abs(a_zero_l) ** 2 + tf.math.abs(a_zero_r) ** 2 + \
-        four_mass_mu_over_q2 * (2 * tf.math.real(a_zero_l * tf.math.conj(a_zero_r)))
+        four_mass2_over_q2 * (2 * tf.math.real(a_zero_l * tf.math.conj(a_zero_r)))
 
 
 def _j2s(amplitudes, beta2_mu):

@@ -2,6 +2,7 @@ import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
 
 with tf.device('/device:GPU:0'):
+    # Signal generated from flavio for C9 = -1.027, C10 = 0.498
     signal_coeffs = [
         tf.constant(-3.4277495848061257, name='sig_para_l_re_alpha'),
         tf.constant(-0.12410026985551571, name='sig_para_l_re_beta'),

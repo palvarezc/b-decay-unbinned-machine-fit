@@ -1,14 +1,13 @@
 Optimise integral
-Check maths terms
 
+Check maths terms
 Switch to accept-reject/monte-carlo. Increase sample size
 Fix fitting/Check one or two parameter fits+surfaces
-
 Fix basis fitting/Check
 
 Do ensembles & plot distributions. Change to proper sample size
 Optimise hyperparameters, choose optimiser, more layers? Keras?
-Convert to tf distribution?/Unit tests/comments/doc comments
+Unit tests?
 
 Add mass terms
 Add S-wave

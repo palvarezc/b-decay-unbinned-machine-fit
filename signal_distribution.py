@@ -19,6 +19,7 @@ options_num = 10_000_000
 
 @tf.function
 def pdf(events, coeffs):
+    """Return probabilities for given events based on particular amplitude coefficients"""
     with tf.device('/device:GPU:0'):
         decay_rates = _decay_rate(events, coeffs)
         norm = _integrate_decay_rate(coeffs)
@@ -27,6 +28,7 @@ def pdf(events, coeffs):
 
 @tf.function
 def negative_log_likelihood(events, coeffs):
+    """Return negative of the log likelihood for given events based on particular amplitude coefficients"""
     with tf.device('/device:GPU:0'):
         return -tf.reduce_sum(
             tf.math.log(
@@ -36,6 +38,11 @@ def negative_log_likelihood(events, coeffs):
 
 
 def generate_events(events_num, coeffs):
+    """
+    Generate sample events based on particular amplitude coefficients (e.g. generate the signal)
+
+    Returned is a tensor of shape (events_num, 4) with axis 1 representing params [q^2, cos_theta_k, cos_theta_l, phi]
+    """
     with tf.device('/device:GPU:0'):
         q2 = tfp.distributions.Uniform(low=q2_min, high=q2_max).sample(options_num)
         cos_theta_k = tfp.distributions.Uniform(low=-1.0, high=1.0).sample(options_num)
@@ -52,6 +59,7 @@ def generate_events(events_num, coeffs):
 
 
 def _decay_rate(events, coeffs):
+    """Calculate the decay rates for given events based on particular amplitude coefficients"""
     [q2, cos_theta_k, cos_theta_l, phi] = tf.unstack(events, axis=1)
     amplitudes = _coeffs_to_amplitudes(q2, coeffs)
 
@@ -105,9 +113,12 @@ def _decay_rate(events, coeffs):
     )
 
 
-# https://arxiv.org/abs/1202.4266
-# @see notebook
 def _decay_rate_angle_integrated(q2, coeffs):
+    """
+    Calculate the angle-integrated decay rates for given q^2 values based on particular amplitude coefficients
+
+    Formula can be found in the Mathematica file "n_sig.nb" and the paper arXiv:1201.4266
+    """
     amplitudes = _coeffs_to_amplitudes(q2, coeffs)
 
     # Mass terms
@@ -129,14 +140,17 @@ def _decay_rate_angle_integrated(q2, coeffs):
 
 
 def _four_mass2_over_q2(q2):
+    """Calculate 4*m_μ^2/q^2"""
     return (four * (mass_mu ** 2)) / q2
 
 
 def _beta2(four_mass2_over_q2):
+    """Calculate β_μ^2"""
     return one - four_mass2_over_q2
 
 
 def _j1s(amplitudes, beta2_mu, four_mass2_over_q2):
+    """Calculate j1s angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _] = amplitudes
     return ((two + beta2_mu) / four) * (
         tf.math.abs(a_perp_l) ** 2 + tf.math.abs(a_para_l) ** 2 +
@@ -148,12 +162,14 @@ def _j1s(amplitudes, beta2_mu, four_mass2_over_q2):
 
 
 def _j1c(amplitudes, four_mass2_over_q2):
+    """Calculate j1c angular observable"""
     [_, _, _, _, a_zero_l, a_zero_r] = amplitudes
     return tf.math.abs(a_zero_l) ** 2 + tf.math.abs(a_zero_r) ** 2 + \
         four_mass2_over_q2 * (2 * tf.math.real(a_zero_l * tf.math.conj(a_zero_r)))
 
 
 def _j2s(amplitudes, beta2_mu):
+    """Calculate j2s angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _] = amplitudes
     return (beta2_mu / four) * (
         tf.math.abs(a_perp_l) ** 2 + tf.math.abs(a_para_l) ** 2 +
@@ -162,11 +178,13 @@ def _j2s(amplitudes, beta2_mu):
 
 
 def _j2c(amplitudes, beta2_mu):
+    """Calculate j2c angular observable"""
     [_, _, _, _, a_zero_l, a_zero_r] = amplitudes
     return (- beta2_mu) * (tf.math.abs(a_zero_l) ** 2 + tf.math.abs(a_zero_r) ** 2)
 
 
 def _j3(amplitudes, beta2_mu):
+    """Calculate j3 angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _] = amplitudes
     return (beta2_mu / two) * (
         tf.math.abs(a_perp_l) ** 2 - tf.math.abs(a_para_l) ** 2 +
@@ -175,6 +193,7 @@ def _j3(amplitudes, beta2_mu):
 
 
 def _j4(amplitudes, beta2_mu):
+    """Calculate j4 angular observable"""
     [a_para_l, a_para_r, _, _, a_zero_l, a_zero_r] = amplitudes
     return (beta2_mu / tf.sqrt(two)) * (
         tf.math.real(a_zero_l * tf.math.conj(a_para_l)) +
@@ -183,6 +202,7 @@ def _j4(amplitudes, beta2_mu):
 
 
 def _j5(amplitudes, beta_mu):
+    """Calculate j5 angular observable"""
     [_, _, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = amplitudes
     return tf.sqrt(two) * beta_mu * (
         tf.math.real(a_zero_l * tf.math.conj(a_perp_l)) -
@@ -191,6 +211,7 @@ def _j5(amplitudes, beta_mu):
 
 
 def _j6s(amplitudes, beta_mu):
+    """Calculate j6s angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _] = amplitudes
     return two * beta_mu * (
         tf.math.real(a_para_l * tf.math.conj(a_perp_l)) -
@@ -199,6 +220,7 @@ def _j6s(amplitudes, beta_mu):
 
 
 def _j7(amplitudes, beta_mu):
+    """Calculate j7 angular observable"""
     [a_para_l, a_para_r, _, _, a_zero_l, a_zero_r] = amplitudes
     return tf.sqrt(two) * beta_mu * (
         tf.math.imag(a_zero_l * tf.math.conj(a_para_l)) -
@@ -207,6 +229,7 @@ def _j7(amplitudes, beta_mu):
 
 
 def _j8(amplitudes, beta2_mu):
+    """Calculate j8 angular observable"""
     [_, _, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = amplitudes
     return (beta2_mu / tf.sqrt(two)) * (
         tf.math.imag(a_zero_l * tf.math.conj(a_perp_l)) +
@@ -215,6 +238,7 @@ def _j8(amplitudes, beta2_mu):
 
 
 def _j9(amplitudes, beta2_mu):
+    """Calculate j9 angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _] = amplitudes
     return beta2_mu * (
         tf.math.imag(tf.math.conj(a_para_l) * a_perp_l) +
@@ -223,6 +247,7 @@ def _j9(amplitudes, beta2_mu):
 
 
 def _integrate_decay_rate(coeffs):
+    """Integrate decay rate function over all angles and a q^2 range for particular amplitude coefficients"""
     return tf_integrate.odeint(
         lambda _, q2: _decay_rate_angle_integrated(q2, coeffs),
         0.0,
@@ -233,6 +258,13 @@ def _integrate_decay_rate(coeffs):
 
 
 def _coeffs_to_amplitudes(q2, coeffs):
+    """
+    Arrange flat list of coefficients into list of amplitudes
+
+    Each amplitude is a tf.complex(re, im) object
+
+    Each re and im param is an anzatz of α + β*q^2 + γ/q^2
+    """
     def _anzatz(c):
         return c[0] + (c[1] * q2) + (c[2] / q2)
 

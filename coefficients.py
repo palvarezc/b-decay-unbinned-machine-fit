@@ -66,7 +66,7 @@ trainable_coeffs = [c for c in fit_coeffs if getattr(c, 'trainable', False)]
 
 
 def coeffs_to_string(coeffs):
-    coeffs_strs = []
-    for coeff in coeffs:
-        coeffs_strs.append('{}{:5.2f}'.format(' ' if getattr(coeff, 'trainable', False) else '=', coeff.numpy()))
-    return ' '.join(coeffs_strs)
+    c_list = []
+    for c in coeffs:
+        c_list.append('{:5.2f}{}'.format(c.numpy(), ' ' if getattr(c, 'trainable', False) else '*'))
+    return ' '.join(c_list)

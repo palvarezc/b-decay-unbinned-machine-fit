@@ -10,18 +10,6 @@ tf.enable_v2_behavior()
 
 # tf.debugging.set_log_device_placement(True)
 
-# TODO: Optimise integral
-# TODO: Check maths terms
-
-# TODO: Switch to accept-reject/monte-carlo. Increase sample size
-# TODO: Fix fitting/Check one or two parameter fits+surfaces
-
-# TODO: Fix basis fitting/Check
-
-# TODO: Do ensembles & plot distributions. Change to proper sample size
-# TODO: Optimise hyperparameters, choose optimiser, more layers? Keras?
-# TODO: Convert to tf distribution?/Unit tests/comments/doc comments
-
 #######################
 
 

@@ -1,7 +1,6 @@
-Switch to accept-reject/monte-carlo. Increase sample size
-
-Fix basis fitting/Check
-Fix fitting/Check one or two parameter fits+surfaces
+Switch to accept-reject/monte-carlo
+File doc comments
+Fix fitting (basis change needed?)/Check
 
 Do ensembles & plot distributions. Change to proper sample size
 Optimise hyperparameters, Optimise integral, choose optimiser, more layers? Keras?

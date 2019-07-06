@@ -1,3 +1,8 @@
+"""
+Config file containing constant signal coefficients and the variable fit coefficients to be optimised.
+
+Both are in the fixed basis where Im(A_perp_r) = Im(A_zero_l) = Re(A_zero_r) = Im(A_zero_r) = 0.
+"""
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
 

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+"""Fit amplitude coefficients to signal events"""
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
@@ -7,7 +10,6 @@ from b_meson_fit.signal_distribution import generate_events, negative_log_likeli
 
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
-
 # tf.debugging.set_log_device_placement(True)
 
 #######################

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+"""
+Plot each coefficient vs. negative log likelihood whilst keeping other coefficients fixed at signal values.
+
+If working properly each plot should show a minimum.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

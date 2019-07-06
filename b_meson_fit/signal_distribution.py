@@ -1,3 +1,5 @@
+"""Contains signal probability functions"""
+
 import math
 import numpy as np
 import tensorflow_probability as tfp

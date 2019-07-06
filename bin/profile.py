@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+"""
+Profile time taken to run negative_log_likelihood() and minimize().
+
+Used to check for performance regressions.
+"""
+
 import timeit
 
 from b_meson_fit.coefficients import *

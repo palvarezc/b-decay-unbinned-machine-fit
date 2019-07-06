@@ -1,12 +1,10 @@
-Optimise integral
-
-Check maths terms
 Switch to accept-reject/monte-carlo. Increase sample size
-Fix fitting/Check one or two parameter fits+surfaces
+
 Fix basis fitting/Check
+Fix fitting/Check one or two parameter fits+surfaces
 
 Do ensembles & plot distributions. Change to proper sample size
-Optimise hyperparameters, choose optimiser, more layers? Keras?
+Optimise hyperparameters, Optimise integral, choose optimiser, more layers? Keras?
 Unit tests?
 
 Add mass terms

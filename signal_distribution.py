@@ -14,6 +14,7 @@ mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
 one = tf.constant(1.0)
 two = tf.constant(2.0)
 four = tf.constant(4.0)
+sqrt_two = tf.sqrt(two)
 options_num = 10_000_000
 
 
@@ -109,7 +110,7 @@ def _decay_rate(events, coeffs):
         (j6s * sin2_theta_k * cos_theta_l) +
         (j7 * sin_2theta_k * sin_theta_l * sin_phi) +
         (j8 * sin_2theta_k * sin_2theta_l * sin_phi) +
-        (j9 * sin_2theta_k * sin_2theta_l * sin_2phi)
+        (j9 * sin2_theta_k * sin2_theta_l * sin_2phi)
     )
 
 
@@ -117,7 +118,7 @@ def _decay_rate_angle_integrated(q2, coeffs):
     """
     Calculate the angle-integrated decay rates for given q^2 values based on particular amplitude coefficients
 
-    Formula can be found in the Mathematica file "n_sig.nb" and the paper arXiv:1201.4266
+    Formula can be found in the Mathematica file "n_sig.nb" and the paper arXiv:1202.4266
     """
     amplitudes = _coeffs_to_amplitudes(q2, coeffs)
 
@@ -195,7 +196,7 @@ def _j3(amplitudes, beta2_mu):
 def _j4(amplitudes, beta2_mu):
     """Calculate j4 angular observable"""
     [a_para_l, a_para_r, _, _, a_zero_l, a_zero_r] = amplitudes
-    return (beta2_mu / tf.sqrt(two)) * (
+    return (beta2_mu / sqrt_two) * (
         tf.math.real(a_zero_l * tf.math.conj(a_para_l)) +
         tf.math.real(a_zero_r * tf.math.conj(a_para_r))
     )
@@ -204,7 +205,7 @@ def _j4(amplitudes, beta2_mu):
 def _j5(amplitudes, beta_mu):
     """Calculate j5 angular observable"""
     [_, _, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = amplitudes
-    return tf.sqrt(two) * beta_mu * (
+    return sqrt_two * beta_mu * (
         tf.math.real(a_zero_l * tf.math.conj(a_perp_l)) -
         tf.math.real(a_zero_r * tf.math.conj(a_perp_r))
     )
@@ -222,7 +223,7 @@ def _j6s(amplitudes, beta_mu):
 def _j7(amplitudes, beta_mu):
     """Calculate j7 angular observable"""
     [a_para_l, a_para_r, _, _, a_zero_l, a_zero_r] = amplitudes
-    return tf.sqrt(two) * beta_mu * (
+    return sqrt_two * beta_mu * (
         tf.math.imag(a_zero_l * tf.math.conj(a_para_l)) -
         tf.math.imag(a_zero_r * tf.math.conj(a_para_r))
     )
@@ -231,7 +232,7 @@ def _j7(amplitudes, beta_mu):
 def _j8(amplitudes, beta2_mu):
     """Calculate j8 angular observable"""
     [_, _, a_perp_l, a_perp_r, a_zero_l, a_zero_r] = amplitudes
-    return (beta2_mu / tf.sqrt(two)) * (
+    return (beta2_mu / sqrt_two) * (
         tf.math.imag(a_zero_l * tf.math.conj(a_perp_l)) +
         tf.math.imag(a_zero_r * tf.math.conj(a_perp_r))
     )

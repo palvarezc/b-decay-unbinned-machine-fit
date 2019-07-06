@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from coefficients import fit_coeffs as real_fit_coeffs, signal_coeffs
-from signal_distribution import generate_events, negative_log_likelihood
+from b_meson_fit.coefficients import fit_coeffs as real_fit_coeffs, signal_coeffs
+from b_meson_fit.signal_distribution import generate_events, negative_log_likelihood
 
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()

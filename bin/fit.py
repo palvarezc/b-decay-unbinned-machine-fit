@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
 
-from coefficients import *
-from signal_distribution import generate_events, negative_log_likelihood
+from b_meson_fit.coefficients import *
+from b_meson_fit.signal_distribution import generate_events, negative_log_likelihood
 
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()

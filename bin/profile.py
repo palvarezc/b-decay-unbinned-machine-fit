@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """
-Profile time taken to run negative_log_likelihood() and minimize().
+Profile time taken to run key functions.
 
 Used to check for performance regressions.
 """
 
+import sys
 import tensorflow.compat.v2 as tf
 import timeit
 
@@ -16,23 +17,19 @@ signal_events = bmf.signal.generate(bmf.coeffs.signal)
 
 optimizer = tf.optimizers.Adam(learning_rate=0.01)
 
-for t in [10, 100, 1000]:
-    tf.print(
-        "nll() x {}: ".format(t),
-        timeit.timeit(
-            lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
-            number=t
-        )
+times = [10, 100, 1000]
+functions = {
+    "nll": lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
+    "minimise": lambda: optimizer.minimize(
+        lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
+        var_list=bmf.coeffs.trainables(),
     )
+}
 
-for t in [10, 100, 1000]:
-    tf.print(
-        "minimize() x {}: ".format(t),
-        timeit.timeit(
-            lambda: optimizer.minimize(
-                lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
-                var_list=bmf.coeffs.trainables(),
-            ),
-            number=t
+for n, f in functions.items():
+    for t in times:
+        tf.print(
+            "{}() x {}: ".format(n, t),
+            timeit.timeit(f, number=t),
+            output_stream=sys.stdout
         )
-    )

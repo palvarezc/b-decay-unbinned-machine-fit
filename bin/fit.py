@@ -47,7 +47,7 @@ print_step("initial")
 optimizer = tf.optimizers.Nadam(learning_rate=0.01)
 
 for i in range(10000):
-    optimizer.minimize(lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit), var_list=bmf.coeffs.trainable)
+    optimizer.minimize(lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit), var_list=bmf.coeffs.trainables())
     if i % 20 == 0:
         print_step(i)
 

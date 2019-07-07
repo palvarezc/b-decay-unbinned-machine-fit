@@ -21,21 +21,23 @@ def try_nll(pos_, val):
     return bmf.signal.nll(signal_events, try_coeffs)
 
 
-for i in range(0, 8):
-    fig, axes = plt.subplots(3)
-    a_name = bmf.coeffs.amplitude_latex_names[i]
-    fig.suptitle(a_name)
+for a_idx in range(0, bmf.coeffs.amplitude_count):
+    if not bmf.coeffs.is_trainable(bmf.coeffs.fit[a_idx*bmf.coeffs.param_count]):
+        continue
 
-    for j in range(0, 3):
-        pos = (i if i < 7 else 8) * 3 + j
-        print('Processing {}'.format(bmf.coeffs.fit[pos].name[4:].split(':')[0]))
+    fig, axes = plt.subplots(bmf.coeffs.param_count)
+    fig.suptitle(bmf.coeffs.amplitude_latex_names[a_idx])
+
+    for p_idx in range(0, bmf.coeffs.param_count):
+        c_idx = a_idx * bmf.coeffs.param_count + p_idx
+        print('Processing {} ({})'.format(bmf.coeffs.names[c_idx], c_idx))
         try_coeffs = bmf.coeffs.signal.copy()
 
         c_range = np.linspace(-12.0, 12.0, 100, dtype=np.float32)
 
-        axes[j].plot(c_range, list(map(lambda c_val: try_nll(pos, c_val).numpy() / 1e5, c_range)))
-        axes[j].set_ylabel(bmf.coeffs.param_latex_names[j] + r' $(\times 10^5)$')
+        axes[p_idx].plot(c_range, list(map(lambda c_val: try_nll(c_idx, c_val).numpy() / 1e5, c_range)))
+        axes[p_idx].set_ylabel(bmf.coeffs.param_latex_names[p_idx] + r' $(\times 10^5)$')
 
-        axes[j].axvline(bmf.coeffs.signal[pos].numpy(), ymax=0.5, color='r')
+        axes[p_idx].axvline(bmf.coeffs.signal[c_idx].numpy(), ymax=0.5, color='r')
 
     plt.show()

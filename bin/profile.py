@@ -31,7 +31,7 @@ for t in [10, 100, 1000]:
         timeit.timeit(
             lambda: optimizer.minimize(
                 lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
-                var_list=bmf.coeffs.trainable,
+                var_list=bmf.coeffs.trainables(),
             ),
             number=t
         )

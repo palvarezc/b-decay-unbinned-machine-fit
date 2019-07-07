@@ -40,8 +40,8 @@ CS = ax.contour(X, Y, likelihoods_grid / 1e5)
 ax.set_title(r'Likelihood $(\times 10^5)$')
 ax.clabel(CS, inline=1, fontsize=10)
 
-ax.set_xlabel(bmf.coeffs.latex_name(cx_idx))
-ax.set_ylabel(bmf.coeffs.latex_name(cy_idx))
+ax.set_xlabel(bmf.coeffs.latex_names[cx_idx])
+ax.set_ylabel(bmf.coeffs.latex_names[cy_idx])
 
 ax.axvline(bmf.coeffs.signal[cx_idx].numpy(), color='r')
 ax.axhline(bmf.coeffs.signal[cy_idx].numpy(), color='r')

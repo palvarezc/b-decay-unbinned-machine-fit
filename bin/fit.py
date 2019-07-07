@@ -31,7 +31,7 @@ def plot_signal(events):
     plt.show()
 
 
-signal_events = bmf.signal.generate(100_000, bmf.coeffs.signal)
+signal_events = bmf.signal.generate(bmf.coeffs.signal)
 plot_signal(signal_events)
 
 ######################

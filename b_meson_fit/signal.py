@@ -40,7 +40,7 @@ def nll(events, coeffs):
         )
 
 
-def generate(events_num, coeffs, options_num=10_000_000):
+def generate(coeffs, events_num=100_000, options_num=10_000_000):
     """
     Generate sample events based on particular amplitude coefficients (e.g. generate the signal)
 

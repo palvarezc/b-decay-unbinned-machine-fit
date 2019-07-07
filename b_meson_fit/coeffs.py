@@ -69,6 +69,25 @@ with tf.device('/device:GPU:0'):
 
 trainable = [_c for _c in fit if getattr(_c, 'trainable', False)]
 
+amplitude_latex_names = [
+    r'Re($a_{\parallel}^L$)',
+    r'Im($a_{\parallel}^L$)',
+    r'Re($a_{\parallel}^R$)',
+    r'Im($a_{\parallel}^R$)',
+    r'Re($a_{\bot}^L$)',
+    r'Im($a_{\bot}^L$)',
+    r'Re($a_{\bot}^R$)',
+    r'Re($a_{0}^L$)',
+]
+
+param_latex_names = [r'$\alpha$', r'$\beta$', r'$\gamma$']
+
+
+def latex_name(i):
+    a = i % 8
+    p = a % 3
+    return "{} {}".format(amplitude_latex_names[a], param_latex_names[p])
+
 
 def to_str(coeffs):
     c_list = []

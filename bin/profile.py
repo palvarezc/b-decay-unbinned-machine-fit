@@ -12,7 +12,7 @@ import b_meson_fit as bmf
 
 tf.enable_v2_behavior()
 
-signal_events = bmf.signal.generate(100_000, bmf.coeffs.signal)
+signal_events = bmf.signal.generate(bmf.coeffs.signal)
 
 optimizer = tf.optimizers.Adam(learning_rate=0.01)
 

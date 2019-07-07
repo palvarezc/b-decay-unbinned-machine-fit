@@ -38,16 +38,34 @@ plot_signal(signal_events)
 
 
 def print_step(step):
-    tf.print("Step:", step, "nll:", bmf.signal.nll(signal_events, bmf.coeffs.signal), output_stream=sys.stdout)
+    tf.print(
+        "Step:", step,
+        "nll:", nll,
+        "grad_max:", grad_max,
+        "grad_mean:", grad_mean,
+        "grad_total:", grad_total,
+        output_stream=sys.stdout
+    )
     tf.print("fit:   ", bmf.coeffs.to_str(bmf.coeffs.fit), output_stream=sys.stdout)
     tf.print("signal:", bmf.coeffs.to_str(bmf.coeffs.signal), output_stream=sys.stdout)
 
 
+# for i in range(18, 36):
+#     bmf.coeffs.fit[i] = bmf.coeffs.signal[i]
+
+grad_max = grad_mean = grad_total = None
+nll = bmf.signal.nll(signal_events, bmf.coeffs.signal)
 print_step("initial")
-optimizer = tf.optimizers.Nadam(learning_rate=0.01)
+optimizer = tf.optimizers.Adam(learning_rate=0.20)
 
 for i in range(10000):
-    optimizer.minimize(lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit), var_list=bmf.coeffs.trainables())
+    with tf.GradientTape() as tape:
+        nll = bmf.signal.nll(signal_events, bmf.coeffs.fit)
+    grads = tape.gradient(nll, bmf.coeffs.trainables())
+    grad_max = tf.reduce_max(grads)
+    grad_mean = tf.reduce_mean(grads)
+    grad_total = tf.reduce_sum(grads)
+    optimizer.apply_gradients(zip(grads, bmf.coeffs.trainables()))
     if i % 20 == 0:
         print_step(i)
 

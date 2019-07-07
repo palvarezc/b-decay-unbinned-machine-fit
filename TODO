@@ -1,8 +1,8 @@
 Switch to accept-reject/monte-carlo
-Fix fitting (basis change needed?)/Check
-
+Finish on soln. convergence
+Optimise PDF/integral
 Do ensembles & plot distributions. Change to proper sample size
-Optimise hyperparameters, Optimise integral, choose optimiser, more layers? Keras?
+Optimise hyperparameters, choose optimiser, default variable vals, create plots of nll/grads etc.
 Unit tests?
 
 Add mass terms

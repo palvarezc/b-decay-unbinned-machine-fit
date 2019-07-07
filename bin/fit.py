@@ -4,11 +4,10 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
-
-from b_meson_fit.coefficients import *
-from b_meson_fit.signal_distribution import generate_events, negative_log_likelihood
-
 import tensorflow.compat.v2 as tf
+
+import b_meson_fit as bmf
+
 tf.enable_v2_behavior()
 # tf.debugging.set_log_device_placement(True)
 
@@ -32,23 +31,23 @@ def plot_signal(events):
     plt.show()
 
 
-signal_events = generate_events(100_000, signal_coeffs)
+signal_events = bmf.signal.generate(100_000, bmf.coeffs.signal)
 plot_signal(signal_events)
 
 ######################
 
 
 def print_step(step):
-    tf.print("Step:", step, "nll:", negative_log_likelihood(signal_events, fit_coeffs), output_stream=sys.stdout)
-    tf.print("fit:   ", coeffs_to_string(fit_coeffs), output_stream=sys.stdout)
-    tf.print("signal:", coeffs_to_string(signal_coeffs), output_stream=sys.stdout)
+    tf.print("Step:", step, "nll:", bmf.signal.nll(signal_events, bmf.coeffs.signal), output_stream=sys.stdout)
+    tf.print("fit:   ", bmf.coeffs.to_str(bmf.coeffs.fit), output_stream=sys.stdout)
+    tf.print("signal:", bmf.coeffs.to_str(bmf.coeffs.signal), output_stream=sys.stdout)
 
 
 print_step("initial")
 optimizer = tf.optimizers.Nadam(learning_rate=0.01)
 
 for i in range(10000):
-    optimizer.minimize(lambda: negative_log_likelihood(signal_events, fit_coeffs), var_list=trainable_coeffs)
+    optimizer.minimize(lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit), var_list=bmf.coeffs.trainable)
     if i % 20 == 0:
         print_step(i)
 

@@ -5,34 +5,33 @@ Profile time taken to run negative_log_likelihood() and minimize().
 Used to check for performance regressions.
 """
 
+import tensorflow.compat.v2 as tf
 import timeit
 
-from b_meson_fit.coefficients import *
-from b_meson_fit.signal_distribution import generate_events, negative_log_likelihood
+import b_meson_fit as bmf
 
-import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
 
-signal_events = generate_events(100_000, signal_coeffs)
+signal_events = bmf.signal.generate(100_000, bmf.coeffs.signal)
 
 optimizer = tf.optimizers.Adam(learning_rate=0.01)
 
 for t in [10, 100, 1000]:
     tf.print(
-        "negative_log_likelihood x {}: ".format(t),
+        "nll() x {}: ".format(t),
         timeit.timeit(
-            lambda: negative_log_likelihood(signal_events, fit_coeffs),
+            lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
             number=t
         )
     )
 
 for t in [10, 100, 1000]:
     tf.print(
-        "minimize x {}: ".format(t),
+        "minimize() x {}: ".format(t),
         timeit.timeit(
             lambda: optimizer.minimize(
-                lambda: negative_log_likelihood(signal_events, fit_coeffs),
-                var_list=trainable_coeffs,
+                lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
+                var_list=bmf.coeffs.trainable,
             ),
             number=t
         )

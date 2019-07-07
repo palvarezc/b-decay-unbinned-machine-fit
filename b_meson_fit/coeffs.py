@@ -8,7 +8,7 @@ tf.enable_v2_behavior()
 
 with tf.device('/device:GPU:0'):
     # Signal generated from flavio for C9 = -1.027, C10 = 0.498
-    signal_coeffs = [
+    signal = [
         tf.constant(-3.4277495848061257, name='sig_para_l_re_alpha'),
         tf.constant(-0.12410026985551571, name='sig_para_l_re_beta'),
         tf.constant(6.045281152442963, name='sig_para_l_re_gamma'),
@@ -52,25 +52,25 @@ with tf.device('/device:GPU:0'):
         tf.constant(0.0, name='sig_zero_r_im_gamma'),
     ]
 
-    params = ['alpha', 'beta', 'gamma']
-    fit_coeffs = \
-        [tf.Variable(1.0, name='fit_a_para_l_re_{}'.format(p)) for p in params] + \
-        [tf.Variable(1.0, name='fit_a_para_l_im_{}'.format(p)) for p in params] + \
-        [tf.Variable(1.0, name='fit_a_para_r_re_{}'.format(p)) for p in params] + \
-        [tf.Variable(1.0, name='fit_a_para_r_im_{}'.format(p)) for p in params] + \
-        [tf.Variable(1.0, name='fit_a_perp_l_re_{}'.format(p)) for p in params] + \
-        [tf.Variable(1.0, name='fit_a_perp_l_im_{}'.format(p)) for p in params] + \
-        [tf.Variable(1.0, name='fit_a_perp_r_re_{}'.format(p)) for p in params] + \
-        [tf.constant(0.0, name='fit_a_perp_r_im_{}'.format(p)) for p in params] + \
-        [tf.Variable(1.0, name='fit_a_zero_l_re_{}'.format(p)) for p in params] + \
-        [tf.constant(0.0, name='fit_a_zero_l_im_{}'.format(p)) for p in params] + \
-        [tf.constant(0.0, name='fit_a_zero_r_re_{}'.format(p)) for p in params] + \
-        [tf.constant(0.0, name='fit_a_zero_r_im_{}'.format(p)) for p in params]
+    _params = ['alpha', 'beta', 'gamma']
+    fit = \
+        [tf.Variable(1.0, name='fit_a_para_l_re_{}'.format(p)) for p in _params] + \
+        [tf.Variable(1.0, name='fit_a_para_l_im_{}'.format(p)) for p in _params] + \
+        [tf.Variable(1.0, name='fit_a_para_r_re_{}'.format(p)) for p in _params] + \
+        [tf.Variable(1.0, name='fit_a_para_r_im_{}'.format(p)) for p in _params] + \
+        [tf.Variable(1.0, name='fit_a_perp_l_re_{}'.format(p)) for p in _params] + \
+        [tf.Variable(1.0, name='fit_a_perp_l_im_{}'.format(p)) for p in _params] + \
+        [tf.Variable(1.0, name='fit_a_perp_r_re_{}'.format(p)) for p in _params] + \
+        [tf.constant(0.0, name='fit_a_perp_r_im_{}'.format(p)) for p in _params] + \
+        [tf.Variable(1.0, name='fit_a_zero_l_re_{}'.format(p)) for p in _params] + \
+        [tf.constant(0.0, name='fit_a_zero_l_im_{}'.format(p)) for p in _params] + \
+        [tf.constant(0.0, name='fit_a_zero_r_re_{}'.format(p)) for p in _params] + \
+        [tf.constant(0.0, name='fit_a_zero_r_im_{}'.format(p)) for p in _params]
 
-trainable_coeffs = [c for c in fit_coeffs if getattr(c, 'trainable', False)]
+trainable = [_c for _c in fit if getattr(_c, 'trainable', False)]
 
 
-def coeffs_to_string(coeffs):
+def to_str(coeffs):
     c_list = []
     for c in coeffs:
         c_list.append('{:5.2f}{}'.format(c.numpy(), ' ' if getattr(c, 'trainable', False) else '*'))

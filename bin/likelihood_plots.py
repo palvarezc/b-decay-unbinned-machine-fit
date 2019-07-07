@@ -7,19 +7,18 @@ If working properly each plot should show a minimum.
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from b_meson_fit.coefficients import fit_coeffs, signal_coeffs
-from b_meson_fit.signal_distribution import generate_events, negative_log_likelihood
-
 import tensorflow.compat.v2 as tf
+
+import b_meson_fit as bmf
+
 tf.enable_v2_behavior()
 
-signal_events = generate_events(100_000, signal_coeffs)
+signal_events = bmf.signal.generate(100_000, bmf.coeffs.signal)
 
 
 def try_nll1(pos_, val):
     try_coeffs[pos_] = tf.constant(val)
-    return negative_log_likelihood(signal_events, try_coeffs)
+    return bmf.signal.nll(signal_events, try_coeffs)
 
 
 for i in range(0, 8):
@@ -38,15 +37,15 @@ for i in range(0, 8):
 
     for j in range(0, 3):
         pos = (i if i < 7 else 8) * 3 + j
-        print('Processing {}'.format(fit_coeffs[pos].name[4:].split(':')[0]))
-        try_coeffs = signal_coeffs.copy()
+        print('Processing {}'.format(bmf.coeffs.fit[pos].name[4:].split(':')[0]))
+        try_coeffs = bmf.coeffs.signal.copy()
 
         c_range = np.linspace(-12.0, 12.0, 100, dtype=np.float32)
 
         axes[j].plot(c_range, list(map(lambda c_val: try_nll1(pos, c_val).numpy() / 1e5, c_range)))
         axes[j].set_ylabel([r'$\alpha$', r'$\beta$', r'$\gamma$'][j] + r' $(\times 10^5)$')
 
-        axes[j].axvline(signal_coeffs[pos].numpy(), ymax=0.5, color='r')
+        axes[j].axvline(bmf.coeffs.signal[pos].numpy(), ymax=0.5, color='r')
 
     plt.show()
 

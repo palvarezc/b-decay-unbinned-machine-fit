@@ -1,7 +1,6 @@
 """Contains signal probability functions"""
 
 import math
-import numpy as np
 import tensorflow_probability as tfp
 
 # Import this separately as its old Tensorflow v1 code

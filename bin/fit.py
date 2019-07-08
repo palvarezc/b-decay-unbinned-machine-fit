@@ -59,13 +59,14 @@ print_step("initial")
 optimizer = tf.optimizers.Adam(learning_rate=0.20)
 
 for i in range(10000):
-    with tf.GradientTape() as tape:
-        nll = bmf.signal.nll(signal_events, bmf.coeffs.fit)
-    grads = tape.gradient(nll, bmf.coeffs.trainables())
-    grad_max = tf.reduce_max(grads)
-    grad_mean = tf.reduce_mean(grads)
-    grad_total = tf.reduce_sum(grads)
-    optimizer.apply_gradients(zip(grads, bmf.coeffs.trainables()))
+    with tf.device('/device:GPU:0'):
+        with tf.GradientTape() as tape:
+            nll = bmf.signal.nll(signal_events, bmf.coeffs.fit)
+        grads = tape.gradient(nll, bmf.coeffs.trainables())
+        grad_max = tf.reduce_max(grads)
+        grad_mean = tf.reduce_mean(grads)
+        grad_total = tf.reduce_sum(grads)
+        optimizer.apply_gradients(zip(grads, bmf.coeffs.trainables()))
     if i % 20 == 0:
         print_step(i)
 

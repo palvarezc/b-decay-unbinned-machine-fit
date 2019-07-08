@@ -35,9 +35,10 @@ for a_idx in range(0, bmf.coeffs.amplitude_count):
 
         c_range = np.linspace(-12.0, 12.0, 100, dtype=np.float32)
 
-        axes[p_idx].plot(c_range, list(map(lambda c_val: try_nll(c_idx, c_val).numpy() / 1e5, c_range)))
-        axes[p_idx].set_ylabel(bmf.coeffs.param_latex_names[p_idx] + r' $(\times 10^5)$')
+        with tf.device('/device:GPU:0'):
+            axes[p_idx].plot(c_range, list(map(lambda c_val: try_nll(c_idx, c_val).numpy() / 1e5, c_range)))
 
+        axes[p_idx].set_ylabel(bmf.coeffs.param_latex_names[p_idx] + r' $(\times 10^5)$')
         axes[p_idx].axvline(bmf.coeffs.signal[c_idx].numpy(), ymax=0.5, color='r')
 
     plt.show()

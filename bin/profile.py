@@ -28,8 +28,6 @@ functions = {
 
 for n, f in functions.items():
     for t in times:
-        tf.print(
-            "{}() x {}: ".format(n, t),
-            timeit.timeit(f, number=t),
-            output_stream=sys.stdout
-        )
+        with tf.device('/device:GPU:0'):
+            time_taken = timeit.timeit(f, number=t)
+        tf.print("{}() x {}: ".format(n, t), time_taken, output_stream=sys.stdout)

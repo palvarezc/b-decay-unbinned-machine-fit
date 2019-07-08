@@ -30,10 +30,11 @@ cx = np.linspace(-12.0, 12.0, grid_points, dtype=np.float32)
 cy = np.linspace(-12.0, 12.0, grid_points, dtype=np.float32)
 X, Y = tf.meshgrid(cx, cy)
 
-points_grid = tf.stack([X, Y], axis=2)
-points = tf.reshape(points_grid, [grid_points ** 2, 2])
-likelihoods = tf.map_fn(try_nll, points)
-likelihoods_grid = tf.reshape(likelihoods, [grid_points, grid_points])
+with tf.device('/device:GPU:0'):
+    points_grid = tf.stack([X, Y], axis=2)
+    points = tf.reshape(points_grid, [grid_points ** 2, 2])
+    likelihoods = tf.map_fn(try_nll, points)
+    likelihoods_grid = tf.reshape(likelihoods, [grid_points, grid_points])
 
 fig, ax = plt.subplots()
 CS = ax.contour(X, Y, likelihoods_grid / 1e5)

@@ -1,8 +1,12 @@
-Switch to accept-reject/monte-carlo
 Finish on soln. convergence
-Optimise PDF/integral
+Improve README & documentation
+Optimise PDF/integral, profile/tensorboard?
 Do ensembles & plot distributions. Change to proper sample size
-Optimise hyperparameters, choose optimiser, default variable vals, create plots of nll/grads etc.
+Default to randomised variables
+tf.vectorized_map
+Turn coeff file into classes?
+better function docstrings/coeff doc strings
+Optimise hyperparameters, choose optimiser, create plots of nll/grads etc.
 Unit tests?
 
 Add mass terms

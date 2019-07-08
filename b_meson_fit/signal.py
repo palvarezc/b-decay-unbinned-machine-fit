@@ -35,25 +35,65 @@ def nll(events, coeffs):
         )
 
 
-def generate(coeffs, events_num=100_000, options_num=10_000_000):
+def generate(coeffs, events_total=100_000, batch_size=10_000_000):
     """
-    Generate sample events based on particular amplitude coefficients (e.g. generate the signal)
+    Generate sample events based on particular amplitude coefficients
 
-    Returned is a tensor of shape (events_num, 4) with axis 1 representing params [q^2, cos_theta_k, cos_theta_l, phi]
+    Uses a Monte-Carlo accept-reject method: https://planetmath.org/acceptancerejectionmethod
+
+    Args:
+        coeffs: List of scalar coefficient tensors
+        events_total: Number of events to generate
+        batch_size: Number of event candidates to generate for each Monte-Carlo round
+
+    Returns:
+        Tensor of shape (events_total, 4) with axis 1 representing params [q2, cos_theta_k, cos_theta_l, phi]
     """
     with tf.device('/device:GPU:0'):
-        q2 = tfp.distributions.Uniform(low=q2_min, high=q2_max).sample(options_num)
-        cos_theta_k = tfp.distributions.Uniform(low=-1.0, high=1.0).sample(options_num)
-        cos_theta_l = tfp.distributions.Uniform(low=-1.0, high=1.0).sample(options_num)
-        phi = tfp.distributions.Uniform(low=-math.pi, high=math.pi).sample(options_num)
+        events = []
+        events_found = 0
 
-        options = tf.stack([q2, cos_theta_k, cos_theta_l, phi], axis=1)
+        # Find the integrated decay rate so we can normalise our decay rates to probabilities
+        norm = _integrate_decay_rate(coeffs)
 
-        probs = pdf(options, coeffs)
-        normalised_probs = pdf(options, coeffs) / tf.reduce_sum(probs)
-        choices = np.random.choice(options.get_shape()[0], events_num, p=normalised_probs.numpy())
+        # Distributions for our independent variables
+        q2_dist = tfp.distributions.Uniform(low=q2_min, high=q2_max)
+        cos_theta_k_dist = tfp.distributions.Uniform(low=-1.0, high=1.0)
+        cos_theta_l_dist = tfp.distributions.Uniform(low=-1.0, high=1.0)
+        phi_dist = tfp.distributions.Uniform(low=-math.pi, high=math.pi)
 
-        return tf.gather(options, choices, name='events')
+        # Uniform distribution between 0 and 1 for candidate selection
+        uniform_dist = tfp.distributions.Uniform(low=0.0, high=1.0)
+
+        while events_found < events_total:
+            # Get batch_size number of candidate events in tensor of shape (batch_size, 4)
+            candidates = tf.stack(
+                [
+                    q2_dist.sample(batch_size),
+                    cos_theta_k_dist.sample(batch_size),
+                    cos_theta_l_dist.sample(batch_size),
+                    phi_dist.sample(batch_size)
+                ],
+                axis=1
+            )
+            # Get a list of probabilities for each event with shape(batch_size,)
+            probabilities = _decay_rate(candidates, coeffs) / norm
+
+            # Get a uniform distribution of numbers between 0 and 1 with shape (batch_size,)
+            uniforms = uniform_dist.sample(batch_size)
+
+            # Get a list of row indexes for probabilities tensor (and therefore candidates tensor)
+            #  where we accept them (uniform value < probability value)
+            accept_candidates_ids = tf.squeeze(tf.where(tf.less(uniforms, probabilities)), -1)
+            # Use indexes to gather candidates we accept
+            accept_candidates = tf.gather(candidates, accept_candidates_ids)
+
+            # Append accepted candidates to our events list
+            events.append(accept_candidates)
+            events_found = events_found + tf.shape(accept_candidates)[0]
+
+        # Bolt our event tensors together and limit to returning events_total rows
+        return tf.concat(events, axis=0)[0:events_total, :]
 
 
 def _decay_rate(events, coeffs):

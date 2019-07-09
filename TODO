@@ -1,13 +1,12 @@
-Finish on soln. convergence
-Improve README & documentation
-Optimise PDF/integral, profile/tensorboard?
-Do ensembles & plot distributions. Change to proper sample size
-Default to randomised variables
-tf.vectorized_map
-Turn coeff file into classes?
+Optimise PDF/integral
 better function docstrings/coeff doc strings
-Optimise hyperparameters, choose optimiser, create plots of nll/grads etc.
-Unit tests?
+Turn coeff file into classes?
+Finish on soln. convergence
+Improve README (pycharm) & documentation
+Do ensembles & plot distributions.
+Change to proper sample size. Normalise nll.
+Default to randomised variables
+Optimise hyperparameters/optimiser
 
 Add mass terms
 Add S-wave

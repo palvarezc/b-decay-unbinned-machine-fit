@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Profile time taken to run key functions.
+Benchmark time taken to run key functions.
 
 Used to check for performance regressions.
 """

@@ -19,9 +19,9 @@ optimizer = tf.optimizers.Adam(learning_rate=0.01)
 
 times = [10, 100, 1000]
 functions = {
-    "nll": lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
+    "nll": lambda: bmf.signal.nll(bmf.coeffs.fit, signal_events),
     "minimise": lambda: optimizer.minimize(
-        lambda: bmf.signal.nll(signal_events, bmf.coeffs.fit),
+        lambda: bmf.signal.nll(bmf.coeffs.fit, signal_events),
         var_list=bmf.coeffs.trainables(),
     )
 }

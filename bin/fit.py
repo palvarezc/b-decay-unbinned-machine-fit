@@ -54,14 +54,14 @@ def print_step(step):
 #     bmf.coeffs.fit[i] = bmf.coeffs.signal[i]
 
 grad_max = grad_mean = grad_total = None
-nll = bmf.signal.nll(signal_events, bmf.coeffs.signal)
+nll = bmf.signal.nll(bmf.coeffs.signal, signal_events)
 print_step("initial")
 optimizer = tf.optimizers.Adam(learning_rate=0.20)
 
 for i in range(10000):
     with tf.device('/device:GPU:0'):
         with tf.GradientTape() as tape:
-            nll = bmf.signal.nll(signal_events, bmf.coeffs.fit)
+            nll = bmf.signal.nll(bmf.coeffs.fit, signal_events)
         grads = tape.gradient(nll, bmf.coeffs.trainables())
         grad_max = tf.reduce_max(grads)
         grad_mean = tf.reduce_mean(grads)

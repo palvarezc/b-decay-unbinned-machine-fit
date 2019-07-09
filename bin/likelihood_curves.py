@@ -18,7 +18,7 @@ signal_events = bmf.signal.generate(bmf.coeffs.signal)
 
 def try_nll(pos_, val):
     try_coeffs[pos_] = tf.constant(val)
-    return bmf.signal.nll(signal_events, try_coeffs)
+    return bmf.signal.nll(try_coeffs, signal_events)
 
 
 for a_idx in range(0, bmf.coeffs.amplitude_count):

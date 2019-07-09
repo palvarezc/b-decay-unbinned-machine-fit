@@ -1,12 +1,11 @@
 """Contains signal probability functions"""
 
 import math
-import tensorflow_probability as tfp
-
+import tensorflow.compat.v2 as tf
 # Import this separately as its old Tensorflow v1 code
 from tensorflow.contrib import integrate as tf_integrate
+import tensorflow_probability as tfp
 
-import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
 
 q2_min = tf.constant(1.0)  # 1 (GeV/c^2)^2
@@ -14,22 +13,13 @@ q2_max = tf.constant(8.0)  # 8 (GeV/c^2)^2
 mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
 
 
-@tf.function
-def pdf(events, coeffs):
-    """Return probabilities for given events based on particular amplitude coefficients"""
-    with tf.device('/device:GPU:0'):
-        decay_rates = _decay_rate(events, coeffs)
-        norm = _integrate_decay_rate(coeffs)
-        return tf.math.maximum(decay_rates / norm, 1e-30)
-
-
-@tf.function
-def nll(events, coeffs):
+# @tf.function
+def nll(coeffs, events):
     """Return negative of the log likelihood for given events based on particular amplitude coefficients"""
     with tf.device('/device:GPU:0'):
         return -tf.reduce_sum(
             tf.math.log(
-                pdf(events, coeffs)
+                _pdf(coeffs, events)
             )
         )
 
@@ -76,7 +66,7 @@ def generate(coeffs, events_total=100_000, batch_size=10_000_000):
                 axis=1
             )
             # Get a list of probabilities for each event with shape(batch_size,)
-            probabilities = _decay_rate(candidates, coeffs) / norm
+            probabilities = _decay_rate(coeffs, candidates) / norm
 
             # Get a uniform distribution of numbers between 0 and 1 with shape (batch_size,)
             uniforms = uniform_dist.sample(batch_size)
@@ -95,10 +85,17 @@ def generate(coeffs, events_total=100_000, batch_size=10_000_000):
         return tf.concat(events, axis=0)[0:events_total, :]
 
 
-def _decay_rate(events, coeffs):
+def _pdf(coeffs, events):
+    """Return probabilities for given events based on particular amplitude coefficients"""
+    decay_rates = _decay_rate(coeffs, events)
+    norm = _integrate_decay_rate(coeffs)
+    return tf.math.maximum(decay_rates / norm, 1e-30)
+
+
+def _decay_rate(coeffs, events):
     """Calculate the decay rates for given events based on particular amplitude coefficients"""
     [q2, cos_theta_k, cos_theta_l, phi] = tf.unstack(events, axis=1)
-    amplitudes = _coeffs_to_amplitudes(q2, coeffs)
+    amplitudes = _coeffs_to_amplitudes(coeffs, q2)
 
     # Angles
     cos2_theta_k = cos_theta_k ** 2
@@ -150,13 +147,13 @@ def _decay_rate(events, coeffs):
     )
 
 
-def _decay_rate_angle_integrated(q2, coeffs):
+def _decay_rate_angle_integrated(coeffs, q2):
     """
     Calculate the angle-integrated decay rates for given q^2 values based on particular amplitude coefficients
 
     Formula can be found in the Mathematica file "n_sig.nb" and the paper arXiv:1202.4266
     """
-    amplitudes = _coeffs_to_amplitudes(q2, coeffs)
+    amplitudes = _coeffs_to_amplitudes(coeffs, q2)
 
     # Mass terms
     four_mass2_over_q2 = _four_mass2_over_q2(q2)
@@ -286,7 +283,7 @@ def _j9(amplitudes, beta2_mu):
 def _integrate_decay_rate(coeffs):
     """Integrate decay rate function over all angles and a q^2 range for particular amplitude coefficients"""
     return tf_integrate.odeint(
-        lambda _, q2: _decay_rate_angle_integrated(q2, coeffs),
+        lambda _, q2: _decay_rate_angle_integrated(coeffs, q2),
         0.0,
         tf.stack([q2_min, q2_max]),
         rtol=1e-4,
@@ -294,7 +291,7 @@ def _integrate_decay_rate(coeffs):
     )[1]
 
 
-def _coeffs_to_amplitudes(q2, coeffs):
+def _coeffs_to_amplitudes(coeffs, q2):
     """
     Arrange flat list of coefficients into list of amplitudes
 

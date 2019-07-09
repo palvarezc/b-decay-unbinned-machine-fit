@@ -22,7 +22,7 @@ signal_events = bmf.signal.generate(bmf.coeffs.signal)
 def try_nll(c):
     fit_coeffs[cx_idx] = tf.constant(c[0])
     fit_coeffs[cy_idx] = tf.constant(c[1])
-    return bmf.signal.nll(signal_events, fit_coeffs)
+    return bmf.signal.nll(fit_coeffs, signal_events)
 
 
 fit_coeffs = bmf.coeffs.signal.copy()

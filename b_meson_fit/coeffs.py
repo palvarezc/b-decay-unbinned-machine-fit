@@ -76,9 +76,12 @@ latex_names = ['{} {}'.format(a, p) for a in amplitude_latex_names for p in para
 count = len(names)
 
 with tf.device('/device:GPU:0'):
-    # Flatten into list of scalar tensors
+    # Turn our signal cofficient numbers into a flat list of constant tensors
     signal = [tf.constant(_p) for _a in _signal_coeffs for _c in _a for _p in _c]
 
+    # Construct a flat list of tensors to represent what we're going to fit.
+    # Tensors that represent non-fixed coefficients in this basis are tf.Variables
+    # Tensors that represent fixed coefficients in this basis set as constant 0's
     _default_fit = 1.0
     fit = \
         [tf.Variable(_default_fit, name=names[i]) for i in range(0, 21)] + \
@@ -88,14 +91,23 @@ with tf.device('/device:GPU:0'):
 
 
 def trainables():
+    """Get list of fit coefficients that are trainable"""
     return [c for c in fit if is_trainable(c)]
 
 
 def is_trainable(coeff):
+    """
+    Check if a coefficient is trainable. This is done by seeing if the tensor has the 'trainable'
+    attribute and it is True. tf.constant's do not have this attribute
+    """
     return getattr(coeff, 'trainable', False)
 
 
 def to_str(coeffs):
+    """
+    Take a list of coefficients and return a single-line string for printing
+    Coefficients that are constants are marked with a trailing '*'
+    """
     c_list = []
     for c in coeffs:
         c_list.append('{:5.2f}{}'.format(c.numpy(), ' ' if is_trainable(c) else '*'))

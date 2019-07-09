@@ -1,8 +1,7 @@
 Optimise PDF/integral
-better function docstrings/coeff doc strings
 Turn coeff file into classes?
 Finish on soln. convergence
-Improve README (pycharm) & documentation
+Improve README/docs (pycharm, tf warnings, move doc strings)
 Do ensembles & plot distributions.
 Change to proper sample size. Normalise nll.
 Default to randomised variables

@@ -13,9 +13,18 @@ q2_max = tf.constant(8.0)  # 8 (GeV/c^2)^2
 mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
 
 
-# @tf.function
+@tf.function
 def nll(coeffs, events):
-    """Return negative of the log likelihood for given events based on particular amplitude coefficients"""
+    """
+    Return negative of the log likelihood for given events based on particular amplitude coefficients
+
+    Args:
+        coeffs: List of scalar coefficient tensors
+        events: Tensor of shape (N, 4) with axis 1 representing params [q2, cos_theta_k, cos_theta_l, phi]
+
+    Returns:
+        Rank-1 tensor with shape (N)
+    """
     with tf.device('/device:GPU:0'):
         return -tf.reduce_sum(
             tf.math.log(

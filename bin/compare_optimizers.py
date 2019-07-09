@@ -48,7 +48,8 @@ signal_events = bmf.signal.generate(bmf.coeffs.signal)
 
 for opt in optimizers:
     for lr in learning_rates:
-        log_dir = "{}/../{}/optimizers/{}/{}-{}".format(script_dir, log_top_dir, date_str, opt, lr)
+        # TODO: Improve portability of file path handling
+        log_dir = "{}/../{}/{}-{}".format(script_dir, log_top_dir, log_prefix, opt, lr)
         summary_writer = tf.summary.create_file_writer(logdir=log_dir)
 
         with tf.device('/device:GPU:0'):

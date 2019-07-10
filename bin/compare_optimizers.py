@@ -5,10 +5,8 @@ Generate metrics for different optimizers and learning rates for comparison in T
 Once the script starts it will print out how to start Tensorboard, and the filter regex that can be
 inputted in the left pane under 'Runs' to filter out just this run.
 """
-
-import datetime
 import os
-# This is bad form to put an assignment in the import section, but Tensorflow will log without it
+# This is bad form to put an assignment in the import section, but Tensorflow v2 will log without it
 #  ruining our progress bars
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow.compat.v2 as tf
@@ -24,67 +22,36 @@ tf.enable_v2_behavior()
 
 # What we want to compare
 optimizers = ['Adam', 'Nadam', 'SGD', 'RMSprop']
-learning_rates = [0.05, 0.01, 0.05, 0.10, 0.15, 0.20]
-iterations = 1000
+learning_rates = [0.005, 0.01, 0.05, 0.10, 0.15, 0.20]
+iterations = 2000
+params = {'optimizers': optimizers, 'learning_rates': learning_rates, 'iterations': iterations}
 
-date_str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-log_top_dir = 'logs'
-log_prefix = "optimizers/{}".format(date_str)
-script_dir = os.path.dirname(os.path.realpath(__file__))
+with bmf.Script(params=params, log=True) as script:
+    signal_coeffs = bmf.coeffs.signal()
+    signal_events = bmf.signal.generate(signal_coeffs)
 
-print('Starting comparision with settings:')
-print(' * Optimizers: {}'.format(', '.join(optimizers)))
-print(' * Learning rates: {}'.format(', '.join(map(str, learning_rates))))
-print(' * Iterations: {}'.format(iterations))
-print('')
-print(
-    'Start Tensorboard from the project folder with `tensorboard --logdir={}/ --host=127.0.0.1 --port=6006\'' +
-    ' and navigate to http://127.0.0.1:6006'.format(log_top_dir)
-)
-print('Filter regex: {}'.format(log_prefix))
-print('')
+    # Draw a signal line on each coefficient plot so we can compare how well the optimizers do
+    bmf.Optimizer.log_signal_line(script, bmf.coeffs.fit(), signal_coeffs, iterations)
 
-signal_events = bmf.signal.generate(bmf.coeffs.signal)
+    for opt_name in optimizers:
+        for lr in learning_rates:
+            # Give this run the name `optimizer`-`learning_rate`
+            script.log.suffix = "{}-{}".format(opt_name, lr)
 
-for opt in optimizers:
-    for lr in learning_rates:
-        # TODO: Improve portability of file path handling
-        log_dir = "{}/../{}/{}-{}".format(script_dir, log_top_dir, log_prefix, opt, lr)
-        summary_writer = tf.summary.create_file_writer(logdir=log_dir)
+            optimizer = bmf.Optimizer(
+                script,
+                bmf.coeffs.fit(),
+                signal_events,
+                opt_name,
+                learning_rate=lr
+            )
 
-        with tf.device('/device:GPU:0'):
-            nll = bmf.signal.nll(bmf.coeffs.signal, signal_events)
-            optimizer = getattr(tf.optimizers, opt)(learning_rate=lr)
-
-            # Use tqdm's trange() to print a progress bar for each optimizer/learning rate combo
-            with trange(iterations, desc='{}/{}'.format(opt, lr)) as t:
-                for i in t:
-                    with tf.GradientTape() as tape:
-                        nll = bmf.signal.nll(bmf.coeffs.fit, signal_events)
-                    grads = tape.gradient(nll, bmf.coeffs.trainables())
-                    optimizer.apply_gradients(zip(grads, bmf.coeffs.trainables()))
-
-                    # Write all out Tensorboard stats
-                    with summary_writer.as_default():
-                        # Macro scalars
-                        tf.summary.scalar('nll', nll, step=i)
-                        tf.summary.scalar('gradients/max', tf.reduce_max(grads), step=i)
-                        tf.summary.scalar('gradients/mean', tf.reduce_mean(grads), step=i)
-                        tf.summary.scalar('gradients/total', tf.reduce_sum(grads), step=i)
-
-                        # All trainable coefficients and gradients as individual scalars
-                        for j in range(0, len(bmf.coeffs.trainables())):
-                            coeff = bmf.coeffs.trainables()[j]
-                            name = coeff.name.split(':')[0]
-                            tf.summary.scalar('coefficients/' + name, coeff, step=i)
-                            tf.summary.scalar('gradients/' + name, grads[j], step=i)
-
-                        # Histogram data
-                        tf.summary.histogram('gradients', grads, step=i)
-                        tf.summary.histogram('coefficients', bmf.coeffs.fit, step=i)
-
-                        # Ensure data is flushed to disk after each loop
-                        tf.summary.flush()
-
-print('')
-print('Finished comparison.')
+            try:
+                # Use tqdm's trange() to print a progress bar for each optimizer/learning rate combo
+                with trange(iterations, desc='{}/{}'.format(opt_name, lr)) as t:
+                    for i in t:
+                        grads = optimizer.minimize()
+            except tf.errors.InvalidArgumentError:
+                # Picking bad optimizer settings can result in a "underflow in dt" error from odeint()
+                # Just quit this loop and carry on if that's the case
+                script.stdout('Optimizer bailed. Continuing')

@@ -16,7 +16,6 @@ tf.enable_v2_behavior()
 cx_idx = 2
 cy_idx = 5
 grid_points = 50
-signal_events = bmf.signal.generate(bmf.coeffs.signal)
 
 
 def try_nll(c):
@@ -25,26 +24,30 @@ def try_nll(c):
     return bmf.signal.nll(fit_coeffs, signal_events)
 
 
-fit_coeffs = bmf.coeffs.signal.copy()
-cx = np.linspace(-12.0, 12.0, grid_points, dtype=np.float32)
-cy = np.linspace(-12.0, 12.0, grid_points, dtype=np.float32)
-X, Y = tf.meshgrid(cx, cy)
+with bmf.Script():
+    signal_coeffs = bmf.coeffs.signal()
+    signal_events = bmf.signal.generate(signal_coeffs)
+    fit_coeffs = bmf.coeffs.signal()
 
-with tf.device('/device:GPU:0'):
-    points_grid = tf.stack([X, Y], axis=2)
-    points = tf.reshape(points_grid, [grid_points ** 2, 2])
-    likelihoods = tf.map_fn(try_nll, points)
-    likelihoods_grid = tf.reshape(likelihoods, [grid_points, grid_points])
+    cx = np.linspace(-12.0, 12.0, grid_points, dtype=np.float32)
+    cy = np.linspace(-12.0, 12.0, grid_points, dtype=np.float32)
+    X, Y = tf.meshgrid(cx, cy)
 
-fig, ax = plt.subplots()
-CS = ax.contour(X, Y, likelihoods_grid / 1e5)
-ax.set_title(r'Likelihood $(\times 10^5)$')
-ax.clabel(CS, inline=1, fontsize=10)
+    with tf.device('/device:GPU:0'):
+        points_grid = tf.stack([X, Y], axis=2)
+        points = tf.reshape(points_grid, [grid_points ** 2, 2])
+        likelihoods = tf.map_fn(try_nll, points)
+        likelihoods_grid = tf.reshape(likelihoods, [grid_points, grid_points])
 
-ax.set_xlabel(bmf.coeffs.latex_names[cx_idx])
-ax.set_ylabel(bmf.coeffs.latex_names[cy_idx])
+    fig, ax = plt.subplots()
+    CS = ax.contour(X, Y, likelihoods_grid / 1e5)
+    ax.set_title(r'Likelihood $(\times 10^5)$')
+    ax.clabel(CS, inline=1, fontsize=10)
 
-ax.axvline(bmf.coeffs.signal[cx_idx].numpy(), color='r')
-ax.axhline(bmf.coeffs.signal[cy_idx].numpy(), color='r')
+    ax.set_xlabel(bmf.coeffs.latex_names[cx_idx])
+    ax.set_ylabel(bmf.coeffs.latex_names[cy_idx])
 
-plt.show()
+    ax.axvline(signal_coeffs[cx_idx].numpy(), color='r')
+    ax.axhline(signal_coeffs[cy_idx].numpy(), color='r')
+
+    plt.show()

@@ -20,44 +20,33 @@ $ tensorboard --logdir={}/ --host=127.0.0.1 --port=6006
 
 Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you will get a blank page.
 """
-
-import datetime
-import os
-import sys
 import tensorflow.compat.v2 as tf
 
 import b_meson_fit as bmf
 
 tf.enable_v2_behavior()
 
+with bmf.Script(log=True) as script:
+    if not script.user_is_root():
+        script.stderr('This script needs root permissions. You can run it from the project folder with:')
+        script.stderr(
+            'env PYTHONPATH="${PYTHON_PATH}:`pwd`" sudo -E --preserve-env=PYTHONPATH python bin/profile.py')
+        exit(1)
 
-def eprint(*args):
-    print(*args, file=sys.stderr)
+    signal_coeffs = bmf.coeffs.signal()
+    signal_events = bmf.signal.generate(signal_coeffs)
 
-
-if os.geteuid() != 0:
-    eprint('This script needs root permissions. You can run it from the project folder with:')
-    eprint('env PYTHONPATH="${PYTHON_PATH}:`pwd`" sudo -E --preserve-env=PYTHONPATH python bin/profile.py')
-    exit(1)
-
-signal_events = bmf.signal.generate(bmf.coeffs.signal)
-
-date_str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-log_top_dir = 'logs'
-log_prefix = "profile/{}".format(date_str)
-script_dir = os.path.dirname(os.path.realpath(__file__))
-# TODO: Improve portability of path handling
-log_dir = "{}/../{}/{}".format(script_dir, log_top_dir, log_prefix)
-
-with tf.device('/device:GPU:0'):
-    optimizer = tf.optimizers.Adam(learning_rate=0.10)
+    optimizer = bmf.Optimizer(
+        script,
+        bmf.coeffs.fit(),
+        signal_events,
+        'Adam',
+        signal_coeffs=signal_coeffs,
+        learning_rate=0.10
+    )
 
     for i in range(100):
         tf.summary.trace_on(graph=True, profiler=True)
-        optimizer.minimize(
-            lambda: bmf.signal.nll(bmf.coeffs.fit, signal_events),
-            var_list=bmf.coeffs.trainables()
-        )
-
-        tf.summary.trace_export(name='trace_%d' % i, step=i, profiler_outdir=log_dir)
+        optimizer.minimize()
+        tf.summary.trace_export(name='trace_%d' % optimizer.step, step=optimizer.step, profiler_outdir=script.log.dir)
         tf.summary.flush()

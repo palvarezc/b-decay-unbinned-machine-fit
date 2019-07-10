@@ -1,7 +1,7 @@
 """
-Config file containing constant signal coefficients and the variable fit coefficients to be optimised.
+Contains constants and methods for handling signal and fit coefficients
 
-Both are in the fixed basis where Im(A_perp_r) = Im(A_zero_l) = Re(A_zero_r) = Im(A_zero_r) = 0.
+Fit and signal are in the fixed basis where Im(A_perp_r) = Im(A_zero_l) = Re(A_zero_r) = Im(A_zero_r) = 0.
 """
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
@@ -75,24 +75,32 @@ names = ['{}_{}'.format(a, p) for a in amplitude_names for p in param_names]
 latex_names = ['{} {}'.format(a, p) for a in amplitude_latex_names for p in param_latex_names]
 count = len(names)
 
-with tf.device('/device:GPU:0'):
-    # Turn our signal cofficient numbers into a flat list of constant tensors
-    signal = [tf.constant(_p) for _a in _signal_coeffs for _c in _a for _p in _c]
 
-    # Construct a flat list of tensors to represent what we're going to fit.
-    # Tensors that represent non-fixed coefficients in this basis are tf.Variables
-    # Tensors that represent fixed coefficients in this basis set as constant 0's
+def signal():
+    """Turn our signal coefficient numbers into a flat list of constant tensors
+    """
+    with tf.device('/device:GPU:0'):
+        return [tf.constant(_p) for _a in _signal_coeffs for _c in _a for _p in _c]
+
+
+def fit():
+    """Construct a flat list of tensors to represent what we're going to fit.
+
+    Tensors that represent non-fixed coefficients in this basis are tf.Variables
+    Tensors that represent fixed coefficients in this basis set as constant 0's
+    """
     _default_fit = 1.0
-    fit = \
-        [tf.Variable(_default_fit, name=names[i]) for i in range(0, 21)] + \
-        [tf.constant(0.0) for _ in range(21, 24)] + \
-        [tf.Variable(_default_fit, name=names[i]) for i in range(24, 27)] + \
-        [tf.constant(0.0) for _ in range(27, 36)]
+    with tf.device('/device:GPU:0'):
+        return \
+            [tf.Variable(_default_fit, name=names[i]) for i in range(0, 21)] + \
+            [tf.constant(0.0) for _ in range(21, 24)] + \
+            [tf.Variable(_default_fit, name=names[i]) for i in range(24, 27)] + \
+            [tf.constant(0.0) for _ in range(27, 36)]
 
 
-def trainables():
-    """Get list of fit coefficients that are trainable"""
-    return [c for c in fit if is_trainable(c)]
+def trainables(coeffs):
+    """Get sublist of coefficients that are trainable"""
+    return [c for c in coeffs if is_trainable(c)]
 
 
 def is_trainable(coeff):

@@ -1,11 +1,22 @@
-Optimise PDF/integral
-Turn coeff file into classes?
+fix enum lists
+check scripts
+    compare
+    profile
+
+Unit tests for libraries
+Normalise nll
 Finish on soln. convergence
-Improve README/docs (pycharm, tf warnings, move doc strings)
+Cleanup likelihood scripts/Move GPU statements
+
 Do ensembles & plot distributions.
-Change to proper sample size. Normalise nll.
+Optimise integral
+Change to proper sample size.
+
 Default to randomised variables
-Optimise hyperparameters/optimiser
+Optimise hyperparameters/optimiser/when to stop
+
+Turn coeff file into classes?
+Improve README/docs (pycharm, tf warnings, move doc strings)
 
 Add mass terms
 Add S-wave

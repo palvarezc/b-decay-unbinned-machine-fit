@@ -14,7 +14,7 @@ tf.enable_v2_behavior()
 class TestSignal(unittest.TestCase):
 
     test_coeffs = [
-        ('signal', bmfc.signal,),
+        ('signal', bmfc.signal(),),
         ('ones', [tf.constant(1.0)] * 36,),
         ('integers', [tf.constant(float(i)) for i in range(-18, 18)],),
     ]
@@ -89,7 +89,7 @@ class TestSignal(unittest.TestCase):
 
     def test_generate_returns_correct_shape(self):
         """Check generate() returns a tensor of shape (events_total, 4)"""
-        events = bmfs.generate(bmfc.signal, 123_456)
+        events = bmfs.generate(bmfc.signal(), 123_456)
         self.longMessage = True
         self.assertEqual(123_456, tf.shape(events)[0].numpy())
         self.assertEqual(4, tf.shape(events)[1].numpy())

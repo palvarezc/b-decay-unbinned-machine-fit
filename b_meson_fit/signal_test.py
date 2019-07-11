@@ -87,6 +87,23 @@ class TestSignal(unittest.TestCase):
                 # Check values are the same to within 2%
                 nt.assert_allclose(full_integrated_rate.numpy(), q2_only_integrated_rate.numpy(), atol=0, rtol=0.02)
 
+    def test_integral_decay_rate_within_tolerance(self):
+        """
+        Check that the tolerances set in _integrate_decay_rate() have not been relaxed so much that
+        they mess up the accuracy more than 0.07% from the true value.
+        """
+        for c_name, coeffs in self.test_coeffs:
+            with self.subTest(c_name=c_name):
+                true = tf_integrate.odeint(
+                    lambda _, q2: bmfs._decay_rate_angle_integrated(coeffs, q2),
+                    0.0,
+                    tf.stack([bmfs.q2_min, bmfs.q2_max]),
+                )[1]
+
+                ours = bmfs._integrate_decay_rate(coeffs)
+
+                nt.assert_allclose(true.numpy(), ours.numpy(), atol=0, rtol=0.0007)
+
     def test_generate_returns_correct_shape(self):
         """Check generate() returns a tensor of shape (events_total, 4)"""
         events = bmfs.generate(bmfc.signal(), 123_456)

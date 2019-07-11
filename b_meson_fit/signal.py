@@ -295,8 +295,9 @@ def _integrate_decay_rate(coeffs):
         lambda _, q2: _decay_rate_angle_integrated(coeffs, q2),
         0.0,
         tf.stack([q2_min, q2_max]),
-        rtol=1e-4,
-        atol=1e-2,
+        # Tolerances chosen to maximum speed without changing accuracy much (~ < 0.07% drop depending on coeffs)
+        rtol=1e-2,
+        atol=1e0,
     )[1]
 
 

@@ -1,22 +1,15 @@
-fix enum lists
-check scripts
-    compare
-    profile
-
-Unit tests for libraries
 Normalise nll
 Finish on soln. convergence
 Cleanup likelihood scripts/Move GPU statements
 
 Do ensembles & plot distributions.
-Optimise integral
 Change to proper sample size.
 
 Default to randomised variables
 Optimise hyperparameters/optimiser/when to stop
 
 Turn coeff file into classes?
-Improve README/docs (pycharm, tf warnings, move doc strings)
+Improve README/docs (pycharm, tf warnings, move doc strings, integral accuracy)
 
 Add mass terms
 Add S-wave

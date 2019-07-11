@@ -33,6 +33,16 @@ def nll(coeffs, events):
         )
 
 
+def normalized_nll(coeffs, events):
+    """Get the negative log likelihood divided by the signal event count
+
+    Returns:
+        Rank-1 tensor with shape (N)
+    """
+    with tf.device('/device:GPU:0'):
+        return nll(coeffs, events) / tf.cast(tf.shape(events)[0], tf.float32)
+
+
 def generate(coeffs, events_total=100_000, batch_size=10_000_000):
     """
     Generate sample events based on particular amplitude coefficients

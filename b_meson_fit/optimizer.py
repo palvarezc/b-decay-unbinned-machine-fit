@@ -42,7 +42,7 @@ class Optimizer:
 
         self.optimizer = getattr(tf.optimizers, opt_name)(**kwargs)
 
-        self.latest_nll = self.nll()
+        self.latest_normalized_nll = self.normalized_nll()
         self.latest_grads = None
         self.latest_grad_mean = None
         self.latest_grad_total = None
@@ -50,13 +50,16 @@ class Optimizer:
 
         self._write_summaries()
 
-    def nll(self):
-        """Get the negative log likelihood for our coefficients and signal events
+    def normalized_nll(self):
+        """Get the normalized negative log likelihood
+
+        Working with the normalised version ensures we don't need to re-optimize hyper-parameters when we
+        change signal event numbers.
 
         Returns:
             Scalar tensor
         """
-        return bmfs.nll(self.fit_coeffs, self.signal_events)
+        return bmfs.normalized_nll(self.fit_coeffs, self.signal_events)
 
     def minimize(self):
         """Perform minimization step and write Tensorboard summaries if needed
@@ -64,9 +67,9 @@ class Optimizer:
         self.step = self.step + 1
         with tf.device('/device:GPU:0'):
             with tf.GradientTape() as tape:
-                self.latest_nll = self.nll()
+                self.latest_normalized_nll = self.normalized_nll()
             trainables = bmfc.trainables(self.fit_coeffs)
-            grads = tape.gradient(self.latest_nll, trainables)
+            grads = tape.gradient(self.latest_normalized_nll, trainables)
             self.optimizer.apply_gradients(zip(grads, trainables))
 
             self.grads_timeline.append(grads)
@@ -82,7 +85,7 @@ class Optimizer:
         if self.summary_writer:
             with self.summary_writer.as_default():
                 # Macro scalars
-                tf.summary.scalar('nll', self.latest_nll, step=self.step)
+                tf.summary.scalar('normalized_nll', self.latest_normalized_nll, step=self.step)
                 if self.latest_grad_max:
                     tf.summary.scalar('gradients/max', self.latest_grad_max, step=self.step)
                 if self.latest_grad_mean:
@@ -144,7 +147,7 @@ class Optimizer:
         """Output details about this step"""
         self.script.stdout(
             "Step:", self.step,
-            "nll:", self.latest_nll,
+            "normalized_nll:", self.latest_normalized_nll,
             "grad_max:", self.latest_grad_max,
             "grad_mean:", self.latest_grad_mean,
             "grad_total:", self.latest_grad_total,

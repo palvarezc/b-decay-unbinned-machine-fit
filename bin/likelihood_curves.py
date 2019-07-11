@@ -16,7 +16,7 @@ tf.enable_v2_behavior()
 
 def try_nll(pos_, val):
     try_coeffs[pos_] = tf.constant(val)
-    return bmf.signal.nll(try_coeffs, signal_events)
+    return bmf.signal.normalized_nll(try_coeffs, signal_events)
 
 
 with bmf.Script() as script:
@@ -39,9 +39,9 @@ with bmf.Script() as script:
             c_range = np.linspace(-12.0, 12.0, 100, dtype=np.float32)
 
             with tf.device('/device:GPU:0'):
-                axes[p_idx].plot(c_range, list(map(lambda c_val: try_nll(c_idx, c_val).numpy() / 1e5, c_range)))
+                axes[p_idx].plot(c_range, list(map(lambda c_val: try_nll(c_idx, c_val).numpy(), c_range)))
 
-            axes[p_idx].set_ylabel(bmf.coeffs.param_latex_names[p_idx] + r' $(\times 10^5)$')
+            axes[p_idx].set_ylabel(bmf.coeffs.param_latex_names[p_idx])
             axes[p_idx].axvline(signal_coeffs[c_idx].numpy(), ymax=0.5, color='r')
 
         plt.show()

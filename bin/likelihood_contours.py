@@ -21,7 +21,7 @@ grid_points = 50
 def try_nll(c):
     fit_coeffs[cx_idx] = tf.constant(c[0])
     fit_coeffs[cy_idx] = tf.constant(c[1])
-    return bmf.signal.nll(fit_coeffs, signal_events)
+    return bmf.signal.normalized_nll(fit_coeffs, signal_events)
 
 
 with bmf.Script():
@@ -40,8 +40,8 @@ with bmf.Script():
         likelihoods_grid = tf.reshape(likelihoods, [grid_points, grid_points])
 
     fig, ax = plt.subplots()
-    CS = ax.contour(X, Y, likelihoods_grid / 1e5)
-    ax.set_title(r'Likelihood $(\times 10^5)$')
+    CS = ax.contour(X, Y, likelihoods_grid)
+    ax.set_title('Likelihood')
     ax.clabel(CS, inline=1, fontsize=10)
 
     ax.set_xlabel(bmf.coeffs.latex_names[cx_idx])

@@ -15,7 +15,6 @@ _integration_dt = 0.0025
 _integration_points = tf.constant(np.arange(q2_min.numpy(), q2_max.numpy(), _integration_dt), dtype=tf.float32)
 
 
-@tf.function
 def nll(coeffs, events):
     """
     Return negative of the log likelihood for given events based on particular amplitude coefficients

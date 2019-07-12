@@ -5,17 +5,13 @@ Generate metrics for different optimizers and learning rates for comparison in T
 Once the script starts it will print out how to start Tensorboard, and the filter regex that can be
 inputted in the left pane under 'Runs' to filter out just this run.
 """
-import os
-# This is bad form to put an assignment in the import section, but Tensorflow v2 will log without it
-#  ruining our progress bars
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow.compat.v2 as tf
 from tensorflow.python.util import deprecation
 from tqdm import trange
 
 import b_meson_fit as bmf
 
-# The log level change about should also disable deprecation warnings but it does not. Force them off
+# Force deprecation warnings off to stop them breaking our progress bars. The warnings are from TF internal code anyway.
 deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 tf.enable_v2_behavior()

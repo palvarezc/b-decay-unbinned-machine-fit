@@ -14,9 +14,14 @@ import b_meson_fit as bmf
 tf.enable_v2_behavior()
 
 
+@tf.function
+def nll(coeffs_, signal_events_):
+    return bmf.signal.normalized_nll(coeffs_, signal_events_)
+
+
 def try_nll(pos_, val):
     try_coeffs[pos_] = tf.constant(val)
-    return bmf.signal.normalized_nll(try_coeffs, signal_events)
+    return nll(try_coeffs, signal_events)
 
 
 with bmf.Script() as script:

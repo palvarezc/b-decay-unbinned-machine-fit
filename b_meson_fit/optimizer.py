@@ -9,7 +9,6 @@ tf.enable_v2_behavior()
 
 class Optimizer:
     grads_timeline = []
-    step = 0
     """Attributes:
         grads_timeline (list of tensors): History of gradients added to in each step
         step (int): Step counter
@@ -34,6 +33,7 @@ class Optimizer:
          """
         self.script = script
         self.fit_coeffs = fit_coeffs
+        self.trainables = bmfc.trainables(self.fit_coeffs)
         self.signal_events = signal_events
 
         self.signal_coeffs = signal_coeffs
@@ -42,6 +42,9 @@ class Optimizer:
 
         self.optimizer = getattr(tf.optimizers, opt_name)(**kwargs)
 
+        self.step = tf.Variable(0, name='global_step', dtype=tf.int64)
+
+        self.grads_timeline = []
         self.latest_normalized_nll = self.normalized_nll()
         self.latest_grads = None
         self.latest_grad_mean = None
@@ -64,23 +67,35 @@ class Optimizer:
     def minimize(self):
         """Perform minimization step and write Tensorboard summaries if needed
         """
-        self.step = self.step + 1
+        self.step.assign(self.step + 1)
+
+        [
+            self.latest_normalized_nll,
+            self.latest_grads,
+            self.latest_grad_max,
+            self.latest_grad_mean,
+            self.latest_grad_total
+        ] = self._do_gradients()
+        self.grads_timeline.append(self.latest_grads)
+
+        self._write_summaries()
+
+    @tf.function
+    def _do_gradients(self):
         with tf.device('/device:GPU:0'):
             with tf.GradientTape() as tape:
-                self.latest_normalized_nll = self.normalized_nll()
-            trainables = bmfc.trainables(self.fit_coeffs)
-            grads = tape.gradient(self.latest_normalized_nll, trainables)
-            self.optimizer.apply_gradients(zip(grads, trainables))
+                normalized_nll = self.normalized_nll()
+            grads = tape.gradient(normalized_nll, self.trainables)
+            self.optimizer.apply_gradients(zip(grads, self.trainables))
 
-            self.grads_timeline.append(grads)
-            self.latest_grads = grads
-            self.latest_grad_max = tf.reduce_max(grads)
-            self.latest_grad_mean = tf.reduce_mean(grads)
-            self.latest_grad_total = tf.reduce_sum(grads)
+            grad_max = tf.reduce_max(grads)
+            grad_mean = tf.reduce_mean(grads)
+            grad_total = tf.reduce_sum(grads)
 
-            self._write_summaries()
+            return [normalized_nll, grads, grad_max, grad_mean, grad_total]
 
-    def _write_summaries(self,):
+    @tf.function
+    def _write_summaries(self):
         # If the script context has `log` set to True then write our summaries
         if self.summary_writer:
             with self.summary_writer.as_default():
@@ -94,28 +109,19 @@ class Optimizer:
                     tf.summary.scalar('gradients/total', self.latest_grad_total, step=self.step)
 
                 # All trainable coefficients and gradients as individual scalars
-                for idx, coeff in enumerate(bmfc.trainables(self.fit_coeffs)):
+                for idx, coeff in enumerate(self.trainables):
                     name = bmfc.names[self.fit_coeffs.index(coeff)]
                     tf.summary.scalar('coefficients/' + name, coeff, step=self.step)
                     if self.latest_grads:
                         tf.summary.scalar('gradients/' + name, self.latest_grads[idx], step=self.step)
 
-                # Histogram data
-                if self.latest_grads:
-                    tf.summary.histogram('gradients', self.latest_grads, step=self.step)
-                tf.summary.histogram('coefficients', bmfc.trainables(self.fit_coeffs), step=self.step)
-
-                tf.summary.flush()
-
         # If the script context has `log` set to True AND we had `signal_coeffs` passed on creation,
         #  then log the true signal coefficient values for this step
         if self.signal_writer:
             with self.signal_writer.as_default():
-                for coeff in bmfc.trainables(self.fit_coeffs):
+                for coeff in self.trainables:
                     idx = self.fit_coeffs.index(coeff)
                     tf.summary.scalar('coefficients/' + bmfc.names[idx], self.signal_coeffs[idx], step=self.step)
-
-                tf.summary.flush()
 
     @staticmethod
     def log_signal_line(script, fit_coeffs, signal_coeffs, iterations):

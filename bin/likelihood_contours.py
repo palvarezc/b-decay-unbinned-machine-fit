@@ -18,10 +18,15 @@ cy_idx = 5
 grid_points = 50
 
 
+@tf.function
+def nll(coeffs_, signal_events_):
+    return bmf.signal.normalized_nll(coeffs_, signal_events_)
+
+
 def try_nll(c):
     fit_coeffs[cx_idx] = tf.constant(c[0])
     fit_coeffs[cy_idx] = tf.constant(c[1])
-    return bmf.signal.normalized_nll(fit_coeffs, signal_events)
+    return nll(fit_coeffs, signal_events)
 
 
 with bmf.Script():

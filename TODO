@@ -1,5 +1,6 @@
-Fix memory leak
 Optimise hyperparameters/optimiser
+    ODE params + dict
+    Combine scripts
 
 Finish on soln. convergence
 Default to randomised variables

@@ -1,9 +1,8 @@
 """Contains signal probability functions"""
 
 import math
+import numpy as np
 import tensorflow.compat.v2 as tf
-# Import this separately as its old Tensorflow v1 code
-from tensorflow.contrib import integrate as tf_integrate
 import tensorflow_probability as tfp
 
 tf.enable_v2_behavior()
@@ -11,6 +10,9 @@ tf.enable_v2_behavior()
 q2_min = tf.constant(1.0)  # 1 (GeV/c^2)^2
 q2_max = tf.constant(8.0)  # 8 (GeV/c^2)^2
 mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
+
+_integration_dt = 0.0025
+_integration_points = tf.constant(np.arange(q2_min.numpy(), q2_max.numpy(), _integration_dt), dtype=tf.float32)
 
 
 @tf.function
@@ -300,15 +302,24 @@ def _j9(amplitudes, beta2_mu):
 
 
 def _integrate_decay_rate(coeffs):
-    """Integrate decay rate function over all angles and a q^2 range for particular amplitude coefficients"""
-    return tf_integrate.odeint(
-        lambda _, q2: _decay_rate_angle_integrated(coeffs, q2),
-        0.0,
-        tf.stack([q2_min, q2_max]),
-        # Tolerances chosen to maximum speed without changing accuracy much (~ < 0.07% drop depending on coeffs)
-        rtol=1e-2,
-        atol=1e0,
-    )[1]
+    """
+    Integrate decay rate function over all angles and a q^2 range for particular amplitude coefficients
+
+    Uses trapezoid rule as Tensorflow's odeint() is much slower
+    """
+    # Get tensor of decay_rates for our integration points
+    decay_rates = _decay_rate_angle_integrated(coeffs, _integration_points)
+
+    # Make tensors of the start and end decay rates values for our trapezoids
+    # So if decay_rates=[10.0, 25.0, 45.0, 20.0]
+    start_rates = decay_rates[:-1]  # ... [10.0, 25.0, 45.0]
+    end_rates = decay_rates[1:]     # ... [25.0, 45.0, 20.0]
+
+    # Make a tensor of our trapezoid areas
+    trapezoids = (tf.math.add(start_rates, end_rates) / 2.0) * _integration_dt
+
+    # Add the trapezoids together
+    return tf.reduce_sum(trapezoids)
 
 
 def _coeffs_to_amplitudes(coeffs, q2):

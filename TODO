@@ -1,11 +1,12 @@
-Finish on soln. convergence
-Cleanup likelihood scripts/Move GPU statements
+Fix memory leak
+Optimise hyperparameters/optimiser
 
-Do ensembles (parallel?) & plot distributions.
+Finish on soln. convergence
+Default to randomised variables
 Change to proper sample size.
 
-Default to randomised variables
-Optimise hyperparameters/optimiser/when to stop
+Cleanup likelihood scripts/Move GPU statements
+Do ensembles (parallel?) & plot distributions.
 
 Turn coeff file into classes?
 Improve README/docs (pycharm, tf warnings, move doc strings, integral accuracy)

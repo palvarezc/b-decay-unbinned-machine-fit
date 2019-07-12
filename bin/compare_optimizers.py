@@ -46,12 +46,7 @@ with bmf.Script(params=params, log=True) as script:
                 learning_rate=lr
             )
 
-            try:
-                # Use tqdm's trange() to print a progress bar for each optimizer/learning rate combo
-                with trange(iterations, desc='{}/{}'.format(opt_name, lr)) as t:
-                    for i in t:
-                        grads = optimizer.minimize()
-            except tf.errors.InvalidArgumentError:
-                # Picking bad optimizer settings can result in a "underflow in dt" error from odeint()
-                # Just quit this loop and carry on if that's the case
-                script.stdout('Optimizer bailed. Continuing')
+            # Use tqdm's trange() to print a progress bar for each optimizer/learning rate combo
+            with trange(iterations, desc='{}/{}'.format(opt_name, lr)) as t:
+                for i in t:
+                    grads = optimizer.minimize()

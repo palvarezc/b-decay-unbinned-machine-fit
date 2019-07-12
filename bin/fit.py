@@ -42,7 +42,7 @@ with bmf.Script(log=True) as script:
         optimizer.minimize()
         if optimizer.converged():
             break
-        if optimizer.step % 20 == 0:
+        if optimizer.step % 100 == 0:
             optimizer.print_step()
 
     optimizer.print_step()

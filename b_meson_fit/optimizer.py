@@ -8,12 +8,6 @@ tf.enable_v2_behavior()
 
 
 class Optimizer:
-    grads_timeline = []
-    """Attributes:
-        grads_timeline (list of tensors): History of gradients added to in each step
-        step (int): Step counter
-    """
-
     def __init__(
             self,
             script,
@@ -42,14 +36,14 @@ class Optimizer:
 
         self.optimizer = getattr(tf.optimizers, opt_name)(**kwargs)
 
-        self.step = tf.Variable(0, name='global_step', dtype=tf.int64)
+        self._step = tf.Variable(0, name='global_step', dtype=tf.int64)
 
-        self.grads_timeline = []
         self.latest_normalized_nll = self.normalized_nll()
         self.latest_grads = None
         self.latest_grad_mean = None
         self.latest_grad_total = None
         self.latest_grad_max = None
+        self.timeline_grad_max = []
 
         self._write_summaries()
 
@@ -67,7 +61,7 @@ class Optimizer:
     def minimize(self):
         """Perform minimization step and write Tensorboard summaries if needed
         """
-        self.step.assign(self.step + 1)
+        self._step.assign(self._step + 1)
 
         [
             self.latest_normalized_nll,
@@ -76,9 +70,14 @@ class Optimizer:
             self.latest_grad_mean,
             self.latest_grad_total
         ] = self._do_gradients()
-        self.grads_timeline.append(self.latest_grads)
+        self.timeline_grad_max.append(self.latest_grad_max)
 
         self._write_summaries()
+
+    @property
+    def step(self):
+        """int: Step counter should return as an int so we don't have .numpy() everywhere"""
+        return self._step.numpy()
 
     @tf.function
     def _do_gradients(self):
@@ -100,20 +99,20 @@ class Optimizer:
         if self.summary_writer:
             with self.summary_writer.as_default():
                 # Macro scalars
-                tf.summary.scalar('normalized_nll', self.latest_normalized_nll, step=self.step)
+                tf.summary.scalar('normalized_nll', self.latest_normalized_nll, step=self._step)
                 if self.latest_grad_max:
-                    tf.summary.scalar('gradients/max', self.latest_grad_max, step=self.step)
+                    tf.summary.scalar('gradients/max', self.latest_grad_max, step=self._step)
                 if self.latest_grad_mean:
-                    tf.summary.scalar('gradients/mean', self.latest_grad_mean, step=self.step)
+                    tf.summary.scalar('gradients/mean', self.latest_grad_mean, step=self._step)
                 if self.latest_grad_total:
-                    tf.summary.scalar('gradients/total', self.latest_grad_total, step=self.step)
+                    tf.summary.scalar('gradients/total', self.latest_grad_total, step=self._step)
 
                 # All trainable coefficients and gradients as individual scalars
                 for idx, coeff in enumerate(self.trainables):
                     name = bmfc.names[self.fit_coeffs.index(coeff)]
-                    tf.summary.scalar('coefficients/' + name, coeff, step=self.step)
+                    tf.summary.scalar('coefficients/' + name, coeff, step=self._step)
                     if self.latest_grads:
-                        tf.summary.scalar('gradients/' + name, self.latest_grads[idx], step=self.step)
+                        tf.summary.scalar('gradients/' + name, self.latest_grads[idx], step=self._step)
 
         # If the script context has `log` set to True AND we had `signal_coeffs` passed on creation,
         #  then log the true signal coefficient values for this step
@@ -121,7 +120,7 @@ class Optimizer:
             with self.signal_writer.as_default():
                 for coeff in self.trainables:
                     idx = self.fit_coeffs.index(coeff)
-                    tf.summary.scalar('coefficients/' + bmfc.names[idx], self.signal_coeffs[idx], step=self.step)
+                    tf.summary.scalar('coefficients/' + bmfc.names[idx], self.signal_coeffs[idx], step=self._step)
 
     @staticmethod
     def log_signal_line(script, fit_coeffs, signal_coeffs, iterations):
@@ -143,16 +142,26 @@ class Optimizer:
     def converged(self):
         """Has our optimizer converged on a solution
 
+        Stop if the max gradient has been less than 1e-5 for 200 iterations
+
         Return:
             bool: Whether we've converged
         """
-        # TODO: Implement this
+        conv_max_grad_count = 200
+        conv_max_grad_cutoff = 1e-5
+
+        if len(self.timeline_grad_max) < conv_max_grad_count:
+            return False
+
+        if tf.math.reduce_max(self.timeline_grad_max[-conv_max_grad_count:]) < conv_max_grad_cutoff:
+            return True
+
         return False
 
     def print_step(self):
         """Output details about this step"""
         self.script.stdout(
-            "Step:", self.step,
+            "Step:", self._step,
             "normalized_nll:", self.latest_normalized_nll,
             "grad_max:", self.latest_grad_max,
             "grad_mean:", self.latest_grad_mean,

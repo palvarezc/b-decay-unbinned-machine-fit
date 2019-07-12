@@ -1,8 +1,7 @@
 Optimise hyperparameters/optimiser
     ODE params + dict
     Combine scripts
-
-Finish on soln. convergence
+Cleanup optimizer scripts (combine + pass params as int?)
 Default to randomised variables
 Change to proper sample size.
 

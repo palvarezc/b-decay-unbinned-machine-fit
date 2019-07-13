@@ -20,9 +20,9 @@ functions = {
 with bmf.Script() as script:
     signal_events = bmf.signal.generate(bmf.coeffs.signal())
     fit_coeffs = bmf.coeffs.fit()
-    optimizer = bmf.Optimizer(script, fit_coeffs, signal_events, 'Adam', learning_rate=0.10)
+    optimizer = bmf.Optimizer(fit_coeffs, signal_events)
 
     for n, f in functions.items():
         for t in times:
             time_taken = timeit.timeit(f, number=t)
-            script.stdout("{}() x {}: ".format(n, t), time_taken)
+            bmf.stdout("{}() x {}: ".format(n, t), time_taken)

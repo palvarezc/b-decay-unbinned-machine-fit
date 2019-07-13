@@ -16,33 +16,36 @@ deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 tf.enable_v2_behavior()
 
-# What we want to compare
-optimizers = ['Adam', 'Nadam', 'SGD', 'RMSprop']
-learning_rates = [0.005, 0.01, 0.05, 0.10, 0.15, 0.20]
+# Test name, Optimizer name, Optimizer params, Gradient clip
+combos = [
+    ['Adam_0.1_noclip', 'Adam', {'learning_rate': 0.1}, None],
+    ['Adam_0.2_noclip', 'Adam', {'learning_rate': 0.2}, None],
+    ['Adam_0.2_clip_5.0', 'Adam', {'learning_rate': 0.2}, 5.0],
+]
 iterations = 2000
-params = {'optimizers': optimizers, 'learning_rates': learning_rates, 'iterations': iterations}
 
-with bmf.Script(params=params, log=True) as script:
+with bmf.Script() as script:
     signal_coeffs = bmf.coeffs.signal()
     signal_events = bmf.signal.generate(signal_coeffs)
 
+    log = bmf.Log(script.name)
+
     # Draw a signal line on each coefficient plot so we can compare how well the optimizers do
-    bmf.Optimizer.log_signal_line(script, bmf.coeffs.fit(), signal_coeffs, iterations)
+    log.signal_line(bmf.coeffs.fit(), signal_coeffs, iterations)
 
-    for opt_name in optimizers:
-        for lr in learning_rates:
-            # Give this run the name `optimizer`-`learning_rate`
-            script.log.suffix = "{}-{}".format(opt_name, lr)
+    for combo in combos:
+        test_name, name, params, clip = combo
 
-            optimizer = bmf.Optimizer(
-                script,
-                bmf.coeffs.fit(),
-                signal_events,
-                opt_name,
-                learning_rate=lr
-            )
+        optimizer = bmf.Optimizer(
+            bmf.coeffs.fit(),  # Generate new fit coefficients for each run
+            signal_events,
+            opt_name=name,
+            opt_args=params,
+            grad_clip=clip,
+        )
 
-            # Use tqdm's trange() to print a progress bar for each optimizer/learning rate combo
-            with trange(iterations, desc='{}/{}'.format(opt_name, lr)) as t:
-                for i in t:
-                    grads = optimizer.minimize()
+        # Use tqdm's trange() to print a progress bar for each optimizer/learning rate combo
+        with trange(iterations, desc=test_name) as t:
+            for i in t:
+                optimizer.minimize()
+                log.coefficients(test_name, optimizer, signal_coeffs)

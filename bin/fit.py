@@ -9,8 +9,14 @@ import b_meson_fit as bmf
 
 tf.enable_v2_behavior()
 
-with bmf.Script(log=True) as script:
+log = False
+
+with bmf.Script() as script:
     signal_coeffs = bmf.coeffs.signal()
+    fit_coeffs = bmf.coeffs.fit()
+    if log:
+        log = bmf.Log(script.name)
+
     signal_events = bmf.signal.generate(signal_coeffs)
 
     # Plot our signal distributions for each independent variable
@@ -27,22 +33,26 @@ with bmf.Script(log=True) as script:
         ax.set(title=title)
     plt.show()
 
-    optimizer = bmf.Optimizer(
-        script,
-        bmf.coeffs.fit(),
-        signal_events,
-        'Adam',
-        signal_coeffs=signal_coeffs,
-        learning_rate=0.20
-    )
+    optimizer = bmf.Optimizer(fit_coeffs, signal_events)
 
-    optimizer.print_step()
+    def print_step():
+        bmf.stdout(
+            "Step:", optimizer.step,
+            "normalized_nll:", optimizer.normalized_nll,
+            "grad_max:", optimizer.grad_max,
+        )
+        bmf.stdout("fit:   ", bmf.coeffs.to_str(fit_coeffs))
+        bmf.stdout("signal:", bmf.coeffs.to_str(signal_coeffs))
+
+    print_step()
 
     while True:
         optimizer.minimize()
+        if log:
+            log.coefficients('fit', optimizer, signal_coeffs)
         if optimizer.converged():
             break
-        if optimizer.step % 100 == 0:
-            optimizer.print_step()
+        if optimizer.step.numpy() % 100 == 0:
+            print_step()
 
-    optimizer.print_step()
+    print_step()

@@ -8,46 +8,99 @@ tf.enable_v2_behavior()
 
 
 class Optimizer:
+    default_opt_name = 'Adam'
+    default_opt_args = {'learning_rate': 0.20}
+    default_grad_clip = 5.0
+    default_grad_cutoff_count = 200
+    default_grad_cutoff_value = 4e-6
+
     def __init__(
             self,
-            script,
             fit_coeffs,
             signal_events,
-            opt_name,
-            signal_coeffs=None,
-            **kwargs
+            opt_name=None,
+            opt_args=None,
+            grad_clip=None,
+            grad_cutoff_count=None,
+            grad_cutoff_value=None
     ):
         """Args:
-            script (Script): Script context we're running under
             fit_coeffs (list of tensors): List of our coefficients we're fitting. Some can be tf.constant()s
             signal_events (tensor): Generated signal events
-            opt_name (str): Name of the optimizer to use (e.g. Adam)
-            signal_coeffs (list of tensors, optional): List of coefficients we're aiming for
-            **kwargs: Additional args to pass to optimizer
+            opt_name (str): Name of the optimizer to use (e.g. Adam). Unless this is left as the default, no
+                other defaults will be applied and will need tuning manually.
+            opt_args (dict of str: str): Additional args to pass to optimizer
+            grad_clip (float): Gradient global norm clipping value
+            grad_cutoff_count (int): Say we're converged when the max gradient has been below a value for this many
+                steps
+            grad_cutoff_value (float): Say we're converged when the max gradient has been below this value for a
+                number of steps
          """
-        self.script = script
         self.fit_coeffs = fit_coeffs
         self.trainables = bmfc.trainables(self.fit_coeffs)
         self.signal_events = signal_events
 
-        self.signal_coeffs = signal_coeffs
-        self.summary_writer = script.log.writer() if script.log else None
-        self.signal_writer = script.log.writer('signal') if script.log and signal_coeffs else None
+        if opt_args and not opt_name:
+            raise ValueError('opt_name must be specified if opt_args are')
 
-        self.optimizer = getattr(tf.optimizers, opt_name)(**kwargs)
+        self.grad_clip = grad_clip
+        if not opt_name:
+            opt_name = self.default_opt_name
+            opt_args = self.default_opt_args
+            if not grad_clip:
+                self.grad_clip = self.default_grad_clip
+            if not grad_cutoff_count:
+                self.grad_cutoff_count = self.default_grad_cutoff_count
+            if not grad_cutoff_value:
+                self.grad_cutoff_value = self.default_grad_cutoff_value
 
-        self._step = tf.Variable(0, name='global_step', dtype=tf.int64)
+        self.optimizer = getattr(tf.optimizers, opt_name)(**opt_args)
 
-        self.latest_normalized_nll = self.normalized_nll()
-        self.latest_grads = None
-        self.latest_grad_mean = None
-        self.latest_grad_total = None
-        self.latest_grad_max = None
+        self.step = tf.Variable(0, name='global_step', dtype=tf.int64)
+
+        self.normalized_nll = self._normalized_nll()
+        self.grad_max = None
+        self.grads = None
         self.timeline_grad_max = []
 
-        self._write_summaries()
+    def minimize(self):
+        """Perform minimization step and increment step counter"""
+        self.step.assign(self.step + 1)
+        self.normalized_nll, self.grad_max, self.grads = self._do_gradients()
+        self.timeline_grad_max.append(self.grad_max)
 
-    def normalized_nll(self):
+    def converged(self):
+        """Has our optimizer converged on a solution?
+
+        Stop if the max gradient has been less `grad_cutoff_value` for `grad_cutoff_count` steps
+
+        Return:
+            bool: Whether we've converged
+        """
+        if len(self.timeline_grad_max) < self.grad_cutoff_count:
+            return False
+
+        if tf.math.reduce_max(self.timeline_grad_max[-self.grad_cutoff_count:]) < self.grad_cutoff_value:
+            return True
+
+        return False
+
+    @tf.function
+    def _do_gradients(self):
+        """Calculate and apply gradients for this step"""
+        with tf.device('/device:GPU:0'):
+            with tf.GradientTape() as tape:
+                normalized_nll = self._normalized_nll()
+            grads = tape.gradient(normalized_nll, self.trainables)
+            if self.grad_clip:
+                grads, _ = tf.clip_by_global_norm(grads, self.grad_clip)
+            self.optimizer.apply_gradients(zip(grads, self.trainables))
+
+            grad_max = tf.reduce_max(grads)
+
+        return normalized_nll, grad_max, grads
+
+    def _normalized_nll(self):
         """Get the normalized negative log likelihood
 
         Working with the normalised version ensures we don't need to re-optimize hyper-parameters when we
@@ -57,116 +110,3 @@ class Optimizer:
             Scalar tensor
         """
         return bmfs.normalized_nll(self.fit_coeffs, self.signal_events)
-
-    def minimize(self):
-        """Perform minimization step and write Tensorboard summaries if needed
-        """
-        self._step.assign(self._step + 1)
-
-        [
-            self.latest_normalized_nll,
-            self.latest_grads,
-            self.latest_grad_max,
-            self.latest_grad_mean,
-            self.latest_grad_total
-        ] = self._do_gradients()
-        self.timeline_grad_max.append(self.latest_grad_max)
-
-        self._write_summaries()
-
-    @property
-    def step(self):
-        """int: Step counter should return as an int so we don't have .numpy() everywhere"""
-        return self._step.numpy()
-
-    @tf.function
-    def _do_gradients(self):
-        with tf.device('/device:GPU:0'):
-            with tf.GradientTape() as tape:
-                normalized_nll = self.normalized_nll()
-            grads = tape.gradient(normalized_nll, self.trainables)
-            self.optimizer.apply_gradients(zip(grads, self.trainables))
-
-            grad_max = tf.reduce_max(grads)
-            grad_mean = tf.reduce_mean(grads)
-            grad_total = tf.reduce_sum(grads)
-
-            return [normalized_nll, grads, grad_max, grad_mean, grad_total]
-
-    @tf.function
-    def _write_summaries(self):
-        # If the script context has `log` set to True then write our summaries
-        if self.summary_writer:
-            with self.summary_writer.as_default():
-                # Macro scalars
-                tf.summary.scalar('normalized_nll', self.latest_normalized_nll, step=self._step)
-                if self.latest_grad_max:
-                    tf.summary.scalar('gradients/max', self.latest_grad_max, step=self._step)
-                if self.latest_grad_mean:
-                    tf.summary.scalar('gradients/mean', self.latest_grad_mean, step=self._step)
-                if self.latest_grad_total:
-                    tf.summary.scalar('gradients/total', self.latest_grad_total, step=self._step)
-
-                # All trainable coefficients and gradients as individual scalars
-                for idx, coeff in enumerate(self.trainables):
-                    name = bmfc.names[self.fit_coeffs.index(coeff)]
-                    tf.summary.scalar('coefficients/' + name, coeff, step=self._step)
-                    if self.latest_grads:
-                        tf.summary.scalar('gradients/' + name, self.latest_grads[idx], step=self._step)
-
-        # If the script context has `log` set to True AND we had `signal_coeffs` passed on creation,
-        #  then log the true signal coefficient values for this step
-        if self.signal_writer:
-            with self.signal_writer.as_default():
-                for coeff in self.trainables:
-                    idx = self.fit_coeffs.index(coeff)
-                    tf.summary.scalar('coefficients/' + bmfc.names[idx], self.signal_coeffs[idx], step=self._step)
-
-    @staticmethod
-    def log_signal_line(script, fit_coeffs, signal_coeffs, iterations):
-        """Static method to generate constant signal lines for Tensorboard.
-
-        Useful so that they can be compared to different optimizer runs
-
-        This function doesn't really belong in the optimizer, but it's where all the other Tensorboard writing is
-        done for the time being.
-        """
-        with script.log.writer('signal').as_default():
-            for coeff in bmfc.trainables(fit_coeffs):
-                idx = fit_coeffs.index(coeff)
-                for i in range(iterations):
-                    tf.summary.scalar('coefficients/' + bmfc.names[idx], signal_coeffs[idx], step=i)
-
-            tf.summary.flush()
-
-    def converged(self):
-        """Has our optimizer converged on a solution
-
-        Stop if the max gradient has been less than 1e-5 for 200 iterations
-
-        Return:
-            bool: Whether we've converged
-        """
-        conv_max_grad_count = 200
-        conv_max_grad_cutoff = 1e-5
-
-        if len(self.timeline_grad_max) < conv_max_grad_count:
-            return False
-
-        if tf.math.reduce_max(self.timeline_grad_max[-conv_max_grad_count:]) < conv_max_grad_cutoff:
-            return True
-
-        return False
-
-    def print_step(self):
-        """Output details about this step"""
-        self.script.stdout(
-            "Step:", self._step,
-            "normalized_nll:", self.latest_normalized_nll,
-            "grad_max:", self.latest_grad_max,
-            "grad_mean:", self.latest_grad_mean,
-            "grad_total:", self.latest_grad_total,
-        )
-        self.script.stdout("fit:   ", bmfc.to_str(self.fit_coeffs))
-        if self.signal_coeffs:
-            self.script.stdout("signal:", bmfc.to_str(self.signal_coeffs))

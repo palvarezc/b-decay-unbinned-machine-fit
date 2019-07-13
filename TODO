@@ -1,15 +1,15 @@
-Optimise hyperparameters/optimiser
-    ODE params + dict
-    Combine scripts
-Cleanup optimizer scripts (combine + pass params as int?)
+@tf whole minimize function?
+converged() + proper tensor + autograph?
+https://www.tensorflow.org/api_docs/python/tf/function
+
 Default to randomised variables
 Change to proper sample size.
+Cleanup likelihood scripts
+Move GPU statements
 
-Cleanup likelihood scripts/Move GPU statements
 Do ensembles (parallel?) & plot distributions.
-
-Turn coeff file into classes?
-Improve README/docs (pycharm, tf warnings, move doc strings, integral accuracy)
+Improve README/docs (pycharm, move doc strings, integral accuracy)
+Email
 
 Add mass terms
 Add S-wave

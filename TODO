@@ -1,12 +1,7 @@
-@tf whole minimize function?
-converged() + proper tensor + autograph?
-https://www.tensorflow.org/api_docs/python/tf/function
-
-Default to randomised variables
+Fix fitting CPU stalls?
 Change to proper sample size.
 Cleanup likelihood scripts
 Move GPU statements
-
 Do ensembles (parallel?) & plot distributions.
 Improve README/docs (pycharm, move doc strings, integral accuracy)
 Email

@@ -39,7 +39,6 @@ with bmf.Script() as script:
         bmf.stdout(
             "Step:", optimizer.step,
             "normalized_nll:", optimizer.normalized_nll,
-            "grad_max:", optimizer.grad_max,
         )
         bmf.stdout("fit:   ", bmf.coeffs.to_str(fit_coeffs))
         bmf.stdout("signal:", bmf.coeffs.to_str(signal_coeffs))

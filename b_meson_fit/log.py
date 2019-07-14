@@ -96,8 +96,9 @@ class Log:
         # Handle fit coefficients and gradients
         with self._writer(coeffs_name).as_default():
             tf.summary.scalar('normalized_nll', optimizer.normalized_nll, step=optimizer.step)
-            if optimizer.grad_max:
-                tf.summary.scalar('gradients/max', optimizer.grad_max, step=optimizer.step)
+            if optimizer.grads:
+                tf.summary.scalar('gradients/max', tf.math.abs(tf.reduce_max(optimizer.grads)), step=optimizer.step)
+                tf.summary.scalar('norms/global', tf.linalg.global_norm(optimizer.grads), step=optimizer.step)
 
             # All trainable coefficients and gradients as individual scalars
             for idx, coeff in enumerate(optimizer.trainables):
@@ -105,6 +106,7 @@ class Log:
                 tf.summary.scalar('coefficients/' + name, coeff, step=optimizer.step)
                 if optimizer.grads:
                     tf.summary.scalar('gradients/' + name, optimizer.grads[idx], step=optimizer.step)
+                    tf.summary.scalar('norms/' + name, tf.norm(optimizer.grads[idx]), step=optimizer.step)
 
         # Optionally handle signal coefficients
         if signal_coeffs:

@@ -41,7 +41,7 @@ with bmf.Script() as script:
         signal_events,
     )
 
-    for i in range(100):
+    for i in range(1000):
         tf.summary.trace_on(graph=True, profiler=True)
         optimizer.minimize()
         tf.summary.trace_export(name='trace_%d' % optimizer.step, step=optimizer.step, profiler_outdir=log.dir())

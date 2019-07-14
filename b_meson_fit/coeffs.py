@@ -75,6 +75,12 @@ names = ['{}_{}'.format(a, p) for a in amplitude_names for p in param_names]
 latex_names = ['{} {}'.format(a, p) for a in amplitude_latex_names for p in param_latex_names]
 count = len(names)
 
+# If fit_default is not set, then fit coefficients should be randomly generated between
+#  fit_random_min and fit_random_max
+fit_default = None
+fit_random_min = -5.0
+fit_random_max = 5.0
+
 
 def signal():
     """Turn our signal coefficient numbers into a flat list of constant tensors
@@ -89,12 +95,11 @@ def fit():
     Tensors that represent non-fixed coefficients in this basis are tf.Variables
     Tensors that represent fixed coefficients in this basis set as constant 0's
     """
-    _default_fit = 1.0
     with tf.device('/device:GPU:0'):
         return \
-            [tf.Variable(_default_fit, name=names[i]) for i in range(0, 21)] + \
+            [tf.Variable(_default_fit(), name=names[i]) for i in range(0, 21)] + \
             [tf.constant(0.0) for _ in range(21, 24)] + \
-            [tf.Variable(_default_fit, name=names[i]) for i in range(24, 27)] + \
+            [tf.Variable(_default_fit(), name=names[i]) for i in range(24, 27)] + \
             [tf.constant(0.0) for _ in range(27, 36)]
 
 
@@ -120,3 +125,10 @@ def to_str(coeffs):
     for c in coeffs:
         c_list.append('{:5.2f}{}'.format(c.numpy(), ' ' if is_trainable(c) else '*'))
     return ' '.join(c_list)
+
+
+def _default_fit():
+    if fit_default:
+        return fit_default
+
+    return tf.random.uniform(shape=(), minval=fit_random_min, maxval=fit_random_max)

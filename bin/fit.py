@@ -17,7 +17,7 @@ with bmf.Script() as script:
     if log:
         log = bmf.Log(script.name)
 
-    signal_events = bmf.signal.generate(signal_coeffs)
+    signal_events = bmf.signal.generate(signal_coeffs, events_total=2500)
 
     # Plot our signal distributions for each independent variable
     fig, axes = plt.subplots(nrows=2, ncols=2)

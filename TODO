@@ -1,5 +1,4 @@
 Fix fitting CPU stalls?
-Change to proper sample size.
 Cleanup likelihood scripts
 Move GPU statements
 Do ensembles (parallel?) & plot distributions.

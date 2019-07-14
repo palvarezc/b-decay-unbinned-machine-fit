@@ -18,18 +18,29 @@ tf.enable_v2_behavior()
 class Script:
     """Script context manager class
     """
-    def __init__(self):
+    device = None
+
+    def __init__(self, device='GPU:0'):
         self.name = os.path.basename(os.path.splitext(sys.argv[0])[0])
+
+        if device:
+            self.device = tf.device('/device:' + device)
 
     def __enter__(self):
         """Print on script startup"""
         stdout('Starting {}'.format(self.name))
         self.start_time = time.time()
 
+        if self.device:
+            self.device.__enter__()
+
         return self
 
-    def __exit__(self, _type, _value, _traceback):
+    def __exit__(self, *ex_info):
         """Print goodbye and timing on script shutdown"""
+        if self.device:
+            self.device.__exit__(*ex_info)
+
         time_elapsed = time.time() - self.start_time
         stdout('')
         stdout('Finished {0} in {1:0.1f}s'.format(self.name, time_elapsed))
@@ -37,12 +48,14 @@ class Script:
 
 def stdout(*args, **kwargs):
     """Print to stdout"""
-    tf.print(*args, output_stream=sys.stdout, **kwargs)
+    with tf.device('/device:CPU:0'):
+        tf.print(*args, output_stream=sys.stdout, **kwargs)
 
 
 def stderr(*args, **kwargs):
     """Print to stderr"""
-    tf.print(*args, output_stream=sys.stderr, **kwargs)
+    with tf.device('/device:CPU:0'):
+        tf.print(*args, output_stream=sys.stderr, **kwargs)
 
 
 def user_is_root():

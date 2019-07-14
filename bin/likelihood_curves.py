@@ -54,8 +54,7 @@ with bmf.Script() as script:
 
             c_range = np.linspace(plot_min, plot_max, plot_points, dtype=np.float32)
 
-            with tf.device('/device:GPU:0'):
-                axes[p_idx].plot(c_range, list(map(lambda c_val: try_nll(c_idx, c_val).numpy(), c_range)))
+            axes[p_idx].plot(c_range, list(map(lambda c_val: try_nll(c_idx, c_val).numpy(), c_range)))
 
             # Add the param's greek letter on the Y-axis
             axes[p_idx].set_ylabel(bmf.coeffs.param_latex_names[p_idx])

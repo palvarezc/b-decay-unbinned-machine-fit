@@ -1,5 +1,4 @@
 Fix fitting CPU stalls?
-Move GPU statements
 Do ensembles (parallel?) & plot distributions.
 Improve README/docs (pycharm, move doc strings, integral accuracy)
 Email

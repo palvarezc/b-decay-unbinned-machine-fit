@@ -26,12 +26,11 @@ def nll(coeffs, events):
     Returns:
         Rank-1 tensor with shape (N)
     """
-    with tf.device('/device:GPU:0'):
-        return -tf.reduce_sum(
-            tf.math.log(
-                _pdf(coeffs, events)
-            )
+    return -tf.reduce_sum(
+        tf.math.log(
+            _pdf(coeffs, events)
         )
+    )
 
 
 def normalized_nll(coeffs, events):
@@ -40,8 +39,7 @@ def normalized_nll(coeffs, events):
     Returns:
         Rank-1 tensor with shape (N)
     """
-    with tf.device('/device:GPU:0'):
-        return nll(coeffs, events) / tf.cast(tf.shape(events)[0], tf.float32)
+    return nll(coeffs, events) / tf.cast(tf.shape(events)[0], tf.float32)
 
 
 def generate(coeffs, events_total=100_000, batch_size=10_000_000):
@@ -58,51 +56,50 @@ def generate(coeffs, events_total=100_000, batch_size=10_000_000):
     Returns:
         Tensor of shape (events_total, 4) with axis 1 representing params [q2, cos_theta_k, cos_theta_l, phi]
     """
-    with tf.device('/device:GPU:0'):
-        events = []
-        events_found = 0
+    events = []
+    events_found = 0
 
-        # Find the integrated decay rate so we can normalise our decay rates to probabilities
-        norm = _integrate_decay_rate(coeffs)
+    # Find the integrated decay rate so we can normalise our decay rates to probabilities
+    norm = _integrate_decay_rate(coeffs)
 
-        # Distributions for our independent variables
-        q2_dist = tfp.distributions.Uniform(low=q2_min, high=q2_max)
-        cos_theta_k_dist = tfp.distributions.Uniform(low=-1.0, high=1.0)
-        cos_theta_l_dist = tfp.distributions.Uniform(low=-1.0, high=1.0)
-        phi_dist = tfp.distributions.Uniform(low=-math.pi, high=math.pi)
+    # Distributions for our independent variables
+    q2_dist = tfp.distributions.Uniform(low=q2_min, high=q2_max)
+    cos_theta_k_dist = tfp.distributions.Uniform(low=-1.0, high=1.0)
+    cos_theta_l_dist = tfp.distributions.Uniform(low=-1.0, high=1.0)
+    phi_dist = tfp.distributions.Uniform(low=-math.pi, high=math.pi)
 
-        # Uniform distribution between 0 and 1 for candidate selection
-        uniform_dist = tfp.distributions.Uniform(low=0.0, high=1.0)
+    # Uniform distribution between 0 and 1 for candidate selection
+    uniform_dist = tfp.distributions.Uniform(low=0.0, high=1.0)
 
-        while events_found < events_total:
-            # Get batch_size number of candidate events in tensor of shape (batch_size, 4)
-            candidates = tf.stack(
-                [
-                    q2_dist.sample(batch_size),
-                    cos_theta_k_dist.sample(batch_size),
-                    cos_theta_l_dist.sample(batch_size),
-                    phi_dist.sample(batch_size)
-                ],
-                axis=1
-            )
-            # Get a list of probabilities for each event with shape(batch_size,)
-            probabilities = _decay_rate(coeffs, candidates) / norm
+    while events_found < events_total:
+        # Get batch_size number of candidate events in tensor of shape (batch_size, 4)
+        candidates = tf.stack(
+            [
+                q2_dist.sample(batch_size),
+                cos_theta_k_dist.sample(batch_size),
+                cos_theta_l_dist.sample(batch_size),
+                phi_dist.sample(batch_size)
+            ],
+            axis=1
+        )
+        # Get a list of probabilities for each event with shape(batch_size,)
+        probabilities = _decay_rate(coeffs, candidates) / norm
 
-            # Get a uniform distribution of numbers between 0 and 1 with shape (batch_size,)
-            uniforms = uniform_dist.sample(batch_size)
+        # Get a uniform distribution of numbers between 0 and 1 with shape (batch_size,)
+        uniforms = uniform_dist.sample(batch_size)
 
-            # Get a list of row indexes for probabilities tensor (and therefore candidates tensor)
-            #  where we accept them (uniform value < probability value)
-            accept_candidates_ids = tf.squeeze(tf.where(tf.less(uniforms, probabilities)), -1)
-            # Use indexes to gather candidates we accept
-            accept_candidates = tf.gather(candidates, accept_candidates_ids)
+        # Get a list of row indexes for probabilities tensor (and therefore candidates tensor)
+        #  where we accept them (uniform value < probability value)
+        accept_candidates_ids = tf.squeeze(tf.where(tf.less(uniforms, probabilities)), -1)
+        # Use indexes to gather candidates we accept
+        accept_candidates = tf.gather(candidates, accept_candidates_ids)
 
-            # Append accepted candidates to our events list
-            events.append(accept_candidates)
-            events_found = events_found + tf.shape(accept_candidates)[0]
+        # Append accepted candidates to our events list
+        events.append(accept_candidates)
+        events_found = events_found + tf.shape(accept_candidates)[0]
 
-        # Bolt our event tensors together and limit to returning events_total rows
-        return tf.concat(events, axis=0)[0:events_total, :]
+    # Bolt our event tensors together and limit to returning events_total rows
+    return tf.concat(events, axis=0)[0:events_total, :]
 
 
 def _pdf(coeffs, events):

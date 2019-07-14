@@ -73,35 +73,34 @@ class Optimizer:
 
     def minimize(self):
         """Increment step counter, calculate gradients, and see if any coeffs have converged"""
-        with tf.device('/device:GPU:0'):
-            self.step.assign(self.step + 1)
+        self.step.assign(self.step + 1)
 
-            # Get a list of coefficients that still need training
-            to_train = np.array(self.trainables)[self.train_mask.numpy()].tolist()
+        # Get a list of coefficients that still need training
+        to_train = np.array(self.trainables)[self.train_mask.numpy()].tolist()
 
-            self.normalized_nll, sparse_grads = self._get_gradients(to_train)
+        self.normalized_nll, sparse_grads = self._get_gradients(to_train)
 
-            # Our list of gradients from _get_gradients() only contains coefficients we're still training.
-            # Expand it out to cover all coefficients by inserting 0.0 for coefficients that have
-            #  finished training
-            zero = tf.constant(0.0)
-            grads_iter = iter(sparse_grads)
-            self.grads = [next(grads_iter) if i else zero for i in self.train_mask.numpy()]
+        # Our list of gradients from _get_gradients() only contains coefficients we're still training.
+        # Expand it out to cover all coefficients by inserting 0.0 for coefficients that have
+        #  finished training
+        zero = tf.constant(0.0)
+        grads_iter = iter(sparse_grads)
+        self.grads = [next(grads_iter) if i else zero for i in self.train_mask.numpy()]
 
-            if self.grad_cutoff:
-                # Add these gradients to our timeline
-                self._timeline_grads = tf.concat([[self.grads], self._timeline_grads], 0)
+        if self.grad_cutoff:
+            # Add these gradients to our timeline
+            self._timeline_grads = tf.concat([[self.grads], self._timeline_grads], 0)
 
-                # If our gradient timeline is full (I.e. it's got grad_cutoff_count` rows in it)
-                if self.step.numpy() % self.grad_cutoff_count == 0:
-                    # Work out which coefficients are still training by seeing which ones have a stddev
-                    #  of > `grad_cutoff_value`
-                    self.train_mask = tf.greater(
-                        tf.math.abs(tf.math.reduce_std(self._timeline_grads, axis=0)),
-                        self.grad_cutoff_value
-                    )
-                    # Reset our timeline
-                    self._timeline_grads = tf.zeros([0, 24])
+            # If our gradient timeline is full (I.e. it's got grad_cutoff_count` rows in it)
+            if self.step.numpy() % self.grad_cutoff_count == 0:
+                # Work out which coefficients are still training by seeing which ones have a stddev
+                #  of > `grad_cutoff_value`
+                self.train_mask = tf.greater(
+                    tf.math.abs(tf.math.reduce_std(self._timeline_grads, axis=0)),
+                    self.grad_cutoff_value
+                )
+                # Reset our timeline
+                self._timeline_grads = tf.zeros([0, 24])
 
     def converged(self):
         """Have all our coefficients finished training?

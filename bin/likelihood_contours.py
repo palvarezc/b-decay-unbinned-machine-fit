@@ -43,14 +43,13 @@ with bmf.Script():
     cy = np.linspace(grid_min, grid_max, grid_points, dtype=np.float32)
     X, Y = tf.meshgrid(cx, cy)
 
-    with tf.device('/device:GPU:0'):
-        points_grid = tf.stack([X, Y], axis=2)
-        # Turn our grid into (x, y) pairs
-        points = tf.reshape(points_grid, [grid_points ** 2, 2])
-        # Calculate likelihoods
-        likelihoods = tf.map_fn(try_nll, points)
-        # Convert likelihoods back into meshgrid shape
-        likelihoods_grid = tf.reshape(likelihoods, [grid_points, grid_points])
+    points_grid = tf.stack([X, Y], axis=2)
+    # Turn our grid into (x, y) pairs
+    points = tf.reshape(points_grid, [grid_points ** 2, 2])
+    # Calculate likelihoods
+    likelihoods = tf.map_fn(try_nll, points)
+    # Convert likelihoods back into meshgrid shape
+    likelihoods_grid = tf.reshape(likelihoods, [grid_points, grid_points])
 
     fig, ax = plt.subplots()
     CS = ax.contour(X, Y, likelihoods_grid)

@@ -85,8 +85,7 @@ fit_random_max = 5.0
 def signal():
     """Turn our signal coefficient numbers into a flat list of constant tensors
     """
-    with tf.device('/device:GPU:0'):
-        return [tf.constant(_p) for _a in _signal_coeffs for _c in _a for _p in _c]
+    return [tf.constant(_p) for _a in _signal_coeffs for _c in _a for _p in _c]
 
 
 def fit():
@@ -95,12 +94,11 @@ def fit():
     Tensors that represent non-fixed coefficients in this basis are tf.Variables
     Tensors that represent fixed coefficients in this basis set as constant 0's
     """
-    with tf.device('/device:GPU:0'):
-        return \
-            [tf.Variable(_default_fit(), name=names[i]) for i in range(0, 21)] + \
-            [tf.constant(0.0) for _ in range(21, 24)] + \
-            [tf.Variable(_default_fit(), name=names[i]) for i in range(24, 27)] + \
-            [tf.constant(0.0) for _ in range(27, 36)]
+    return \
+        [tf.Variable(_default_fit(), name=names[i]) for i in range(0, 21)] + \
+        [tf.constant(0.0) for _ in range(21, 24)] + \
+        [tf.Variable(_default_fit(), name=names[i]) for i in range(24, 27)] + \
+        [tf.constant(0.0) for _ in range(27, 36)]
 
 
 def trainables(coeffs):

@@ -3,9 +3,6 @@ Handle Tensorboard logging
 
 Note:
     Using this slows iterations down significantly and should only be used for development.
-
-Todo:
-    * Make this OS portable with file paths
 """
 import datetime
 import os
@@ -57,12 +54,10 @@ class Log:
             str: Logs path
         """
         current_dir = os.path.dirname(os.path.realpath(__file__))
-        return "{}/../{}/{}{}".format(
-            current_dir,
-            self.top_dir,
-            self._prefix(),
-            "/{}".format(suffix) if suffix else ""
-        )
+        path_parts = [current_dir, '..', self.top_dir, self._prefix()]
+        if suffix:
+            path_parts.append(suffix)
+        return os.path.join(*path_parts)
 
     def signal_line(self, fit_coeffs, signal_coeffs, iterations):
         """Write constant signal coefficient values for a number of iterations. Will only write signal values for
@@ -116,7 +111,7 @@ class Log:
                     tf.summary.scalar('coefficients/' + bmfc.names[idx], signal_coeffs[idx], step=optimizer.step)
 
     def _prefix(self):
-        return "{}/{}".format(self.name, self.date)
+        return os.path.join(self.name, self.date)
 
     def _writer(self, suffix):
         if suffix not in self.writers:

@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Generate metrics for different optimizers and learning rates for comparison in Tensorboard
-
-Once the script starts it will print out how to start Tensorboard, and the filter regex that can be
-inputted in the left pane under 'Runs' to filter out just this run.
 """
 import tensorflow.compat.v2 as tf
 from tensorflow.python.util import deprecation

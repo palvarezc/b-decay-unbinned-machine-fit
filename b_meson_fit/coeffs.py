@@ -6,7 +6,7 @@ Fit and signal are in the fixed basis where Im(A_perp_r) = Im(A_zero_l) = Re(A_z
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
 
-# Signal generated from flavio for C9 = -1.027, C10 = 0.498
+# Signal generated from flavio for C9 = -1.027, C10 = 0.498 thanks to Mark Smith of Imperial
 # Outer arrays: [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r]
 # Inner arrays: [Re(...), Im(...)
 # Inner array coeffs: [a, b, c] for anzatz a + (b * q2) + (c / q2)

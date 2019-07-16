@@ -102,14 +102,21 @@ class Optimizer:
                 # Reset our timeline
                 self._timeline_grads = tf.zeros([0, 24])
 
+    def num_remaining(self):
+        """How many coefficients are left to converge
+
+        Return:
+            int: Coefficients remaining
+        """
+        return tf.math.count_nonzero(self.train_mask).numpy()
+
     def converged(self):
         """Have all our coefficients finished training?
 
         Return:
             bool: Whether we've converged
         """
-        any_remaining = tf.cast(tf.math.count_nonzero(self.train_mask), dtype=tf.bool).numpy()
-        return not any_remaining
+        return not self.num_remaining()
 
     @tf.function
     def _get_gradients(self, to_train):

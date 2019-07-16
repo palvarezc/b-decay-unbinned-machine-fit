@@ -1,3 +1,4 @@
 core
+*.csv
 .idea
 __pycache__

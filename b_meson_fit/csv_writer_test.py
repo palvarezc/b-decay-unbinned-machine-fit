@@ -6,9 +6,6 @@ import unittest
 import b_meson_fit.coeffs as bmfc
 import b_meson_fit.csv_writer as bmfw
 
-# Ensure fit coefficients are constants
-bmfc.fit_default = 12.345
-
 
 class TestCsv(unittest.TestCase):
 
@@ -26,6 +23,9 @@ class TestCsv(unittest.TestCase):
         """Check writing rows to new and existing files works as expected"""
         tmp_file = tempfile.mktemp()
         self.maxDiff = None
+
+        # Ensure fit coefficients are constants
+        bmfc.fit_default = 12.345
 
         csv_writer = bmfw.CsvWriter(tmp_file)
         csv_writer.write_coeffs(bmfc.signal())

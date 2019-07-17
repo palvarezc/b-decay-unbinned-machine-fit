@@ -19,6 +19,8 @@ log = False
 iterations = 10
 # Restart iteration if we haven't converged after this many steps
 step_restart = 20_000
+# Number of signal events to generate per iteration
+signal_count = 2400
 
 with bmf.Script() as script:
     if log:
@@ -34,7 +36,7 @@ with bmf.Script() as script:
         bmf.stdout('Starting iteration {}/{}'.format(iteration, iterations))
 
         signal_coeffs = bmf.coeffs.signal()
-        signal_events = bmf.signal.generate(signal_coeffs, events_total=2500)
+        signal_events = bmf.signal.generate(signal_coeffs, events_total=signal_count)
 
         # Plot our signal distributions for each independent variable
         fig, axes = plt.subplots(nrows=2, ncols=2)

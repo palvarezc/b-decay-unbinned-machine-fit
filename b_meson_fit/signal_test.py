@@ -23,7 +23,7 @@ class TestSignal(unittest.TestCase):
         ('signal', bmfc.signal(), 602.09033, ),
         ('ones', [tf.constant(1.0)] * 36, 3125.6858, ),
         ('integers', [tf.constant(float(i)) for i in range(-18, 18)], 335771.25,),
-        ('_minus_point_ones', [tf.constant(0.1)] * 36, 31.256865,),
+        ('_minus_point_ones', [tf.constant(-0.1)] * 36, 31.256865,),
     ]
 
     def test_decay_rate_integration_methods_approx_equal(self):

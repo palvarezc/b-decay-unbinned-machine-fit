@@ -3,11 +3,12 @@ Contains constants and methods for handling signal and fit coefficients
 
 Fit and signal are in the fixed basis where Im(A_perp_r) = Im(A_zero_l) = Re(A_zero_r) = Im(A_zero_r) = 0.
 """
+import itertools
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
 
 # Signal generated from flavio for C9 = -1.027, C10 = 0.498 thanks to Mark Smith of Imperial
-# Outer arrays: [a_par_l, a_par_r, a_perp_l, a_perp_r, a_zero_l, a_zero_r]
+# Outer arrays: [a_par_l, a_par_r, a_perp_l, a_perp_r, a_0_l, a_0_r, a_00_l, a_00_r]
 # Inner arrays: [Re(...), Im(...)
 # Inner array coeffs: [a, b, c] for anzatz a + (b * q2) + (c / q2)
 _signal_coeffs = [
@@ -35,6 +36,14 @@ _signal_coeffs = [
         [0.0, 0.0, 0.0],
         [0.0, 0.0, 0.0]
     ],
+    [
+        [1.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0]
+    ],
+    [
+        [1.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0]
+    ],
 ]
 
 amplitude_names = [
@@ -46,10 +55,14 @@ amplitude_names = [
     'a_perp_l_im',
     'a_perp_r_re',
     'a_perp_r_im',
-    'a_zero_l_re',
-    'a_zero_l_im',
-    'a_zero_r_re',
-    'a_zero_r_im',
+    'a_0_l_re',
+    'a_0_l_im',
+    'a_0_r_re',
+    'a_0_r_im',
+    'a_00_l_re',
+    'a_00_l_im',
+    'a_00_r_re',
+    'a_00_r_im',
 ]
 amplitude_latex_names = [
     r'Re($a_{\parallel}^L$)',
@@ -64,6 +77,10 @@ amplitude_latex_names = [
     r'Im($a_{0}^L$)',
     r'Re($a_{0}^R$)',
     r'Im($a_{0}^R$)',
+    r'Re($a_{00}^L$)',
+    r'Im($a_{00}^L$)',
+    r'Re($a_{00}^R$)',
+    r'Im($a_{00}^R$)',
 ]
 amplitude_count = len(amplitude_names)
 
@@ -94,11 +111,16 @@ def fit():
     Tensors that represent non-fixed coefficients in this basis are tf.Variables
     Tensors that represent fixed coefficients in this basis set as constant 0's
     """
-    return \
-        [tf.Variable(_default_fit(), name=names[i]) for i in range(0, 21)] + \
-        [tf.constant(0.0) for _ in range(21, 24)] + \
-        [tf.Variable(_default_fit(), name=names[i]) for i in range(24, 27)] + \
-        [tf.constant(0.0) for _ in range(27, 36)]
+    fit_trainable_ids = list(itertools.chain(range(0, 21), range(24, 27), [36], [39], [42], [45]))
+    fit_coeffs = []
+    for i in range(count):
+        if i in fit_trainable_ids:
+            coeff = tf.Variable(_default_fit(), name=names[i])
+        else:
+            coeff = tf.constant(0.0)
+        fit_coeffs.append(coeff)
+
+    return fit_coeffs
 
 
 def trainables(coeffs):

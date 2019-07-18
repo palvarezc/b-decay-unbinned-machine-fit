@@ -69,7 +69,7 @@ class Optimizer:
         self.normalized_nll = self._normalized_nll()
         self.grads = None
 
-        self._timeline_grads = tf.zeros([0, 24])
+        self._timeline_grads = tf.zeros([0, len(self.trainables)])
 
     def minimize(self):
         """Increment step counter, calculate gradients, and see if any coeffs have converged"""
@@ -100,7 +100,7 @@ class Optimizer:
                     self.grad_cutoff_value
                 )
                 # Reset our timeline
-                self._timeline_grads = tf.zeros([0, 24])
+                self._timeline_grads = tf.zeros([0, len(self.trainables)])
 
     def num_remaining(self):
         """How many coefficients are left to converge

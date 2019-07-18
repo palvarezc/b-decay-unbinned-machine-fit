@@ -82,8 +82,14 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-* Change scripts to pass options as command line options instead of having variables at the top of files.
+* Add real signal values for a_00_l and a_00_r.
+* Add mass terms for S-wave contributions.
+* Instead of using fit coefficient randomization between -5 and +5, use +/- 100% of the signal value.
+* Investigate whether just aborting non-converging runs is quicker than using the gradient timeline. For this
+to work there will need to be another method of determining when fit has converged.
 * Tune the optimizer better to improve fitting performance and quality.
-* Plotting of fit ensamble results.
-* Add mass terms and S-wave contributions.
-* Add background.
+* Do large ensemble runs and plot results.
+* Compare physics models. Use different signal coefficients and compare P values.
+* Change scripts to pass options as command line options instead of having variables at the top of files.
+* Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
+and fitting based on nuisance parameters for those polynomials.

@@ -37,8 +37,11 @@ with bmf.Script() as script:
 
     # For each amplitude
     for a_idx in range(0, bmf.coeffs.amplitude_count):
-        # If this amplitude is fixed in this basis then ignore it
-        if not bmf.coeffs.is_trainable(fit_coeffs[a_idx*bmf.coeffs.param_count]):
+        # If no coeffs for this amplitude are trainable, then skip this plot
+        coeff_id_alpha = a_idx*bmf.coeffs.param_count
+        if not bmf.coeffs.is_trainable(fit_coeffs[coeff_id_alpha]) \
+            and not bmf.coeffs.is_trainable(fit_coeffs[coeff_id_alpha + 1]) \
+                and not bmf.coeffs.is_trainable(fit_coeffs[coeff_id_alpha + 2]):
             continue
 
         fig, axes = plt.subplots(bmf.coeffs.param_count)
@@ -47,6 +50,11 @@ with bmf.Script() as script:
         # For each param in this amplitude
         for p_idx in range(0, bmf.coeffs.param_count):
             c_idx = a_idx * bmf.coeffs.param_count + p_idx
+
+            # If this param coeff is not trainable then skip this subplot
+            if not bmf.coeffs.is_trainable(fit_coeffs[c_idx]):
+                continue
+
             bmf.stdout('Processing {} ({})'.format(bmf.coeffs.names[c_idx], c_idx))
 
             # Set all coeffs to the constant signal ones

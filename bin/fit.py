@@ -78,7 +78,7 @@ with bmf.Script() as script:
                 if optimizer.converged():
                     converged = True
                     print_step()
-                    writer.write_coeffs(fit_coeffs)
+                    writer.write_coeffs(optimizer.normalized_nll, fit_coeffs)
                     break
                 if optimizer.step.numpy() % 100 == 0:
                     print_step()

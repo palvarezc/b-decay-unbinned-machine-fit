@@ -28,13 +28,13 @@ class TestCsv(unittest.TestCase):
         bmfc.fit_default = 12.345
 
         csv_writer = bmfw.CsvWriter(tmp_file)
-        csv_writer.write_coeffs(bmfc.signal())
-        csv_writer.write_coeffs(bmfc.fit())
-        csv_writer.write_coeffs(bmfc.signal())
+        csv_writer.write_coeffs(1.2, bmfc.signal())
+        csv_writer.write_coeffs(3.4, bmfc.fit())
+        csv_writer.write_coeffs(5.6, bmfc.signal())
         self._compare('csv_writer_rows_first_write.csv', tmp_file, 'Non-existent file gets rows written correctly')
 
         csv_writer = bmfw.CsvWriter(tmp_file)
-        csv_writer.write_coeffs(bmfc.fit())
+        csv_writer.write_coeffs(7.8, bmfc.fit())
         self._compare('csv_writer_rows_append.csv', tmp_file, 'Existing file gets rows appended correctly')
 
     def _compare(self, expected_filename, actual_filepath, msg):

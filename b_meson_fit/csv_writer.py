@@ -32,7 +32,7 @@ class CsvWriter:
 
         # Open the file for writing and write headers if we haven't written before
         self.handle = open(file_path, "a", newline='')
-        self.writer = csv.DictWriter(self.handle, fieldnames=(['id'] + bmfc.names))
+        self.writer = csv.DictWriter(self.handle, fieldnames=(['id', 'normalized_nll'] + bmfc.names))
         if not written_headers:
             self.writer.writeheader()
 
@@ -40,7 +40,7 @@ class CsvWriter:
         if self.handle:
             self.handle.close()
 
-    def write_coeffs(self, coeffs):
+    def write_coeffs(self, normalized_nll, coeffs):
         """Write row of coefficients
 
         Args:
@@ -48,7 +48,7 @@ class CsvWriter:
         """
         self.current_id = self.current_id + 1
         coeff_floats = [c.numpy() for c in coeffs]
-        row = {'id': self.current_id, **dict(zip(bmfc.names, coeff_floats))}
+        row = {'id': self.current_id, 'normalized_nll': normalized_nll, **dict(zip(bmfc.names, coeff_floats))}
         self.writer.writerow(row)
         self.handle.flush()
 

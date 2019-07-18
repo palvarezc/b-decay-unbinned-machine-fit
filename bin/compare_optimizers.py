@@ -15,12 +15,13 @@ tf.enable_v2_behavior()
 
 # Test name, Optimizer name, Optimizer params, Gradient clip, Gradient cutoff, Cutoff count, Cutoff value
 combos = [
-    ['Adam_0.1_noclip_nocutoff', 'Adam', {'learning_rate': 0.1}, None, False, None, None],
+    # ['Adam_0.1_noclip_nocutoff', 'Adam', {'learning_rate': 0.1}, None, False, None, None],
     ['Adam_0.2_noclip_nocutoff', 'Adam', {'learning_rate': 0.2}, None, False, None, None],
-    ['Adam_0.2_clip_5.0_nocutoff', 'Adam', {'learning_rate': 0.2}, 5.0, False, None, None],
-    ['Adam_0.2_clip_5.0_defaultcutoff', 'Adam', {'learning_rate': 0.2}, 5.0, True, None, None],
+    ['Adam_0.2_noclip_defaultcutoff', 'Adam', {'learning_rate': 0.2}, None, True, None, None],
+    # ['Adam_0.2_clip_5.0_nocutoff', 'Adam', {'learning_rate': 0.2}, 5.0, False, None, None],
+    # ['Adam_0.2_clip_5.0_defaultcutoff', 'Adam', {'learning_rate': 0.2}, 5.0, True, None, None],
 ]
-iterations = 2000
+iterations = 5000
 # Set all default fit coefficients to the same value to make comparison possible
 bmf.coeffs.fit_default = 1.0
 

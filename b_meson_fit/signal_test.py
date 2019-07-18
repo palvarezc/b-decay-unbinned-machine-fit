@@ -18,10 +18,10 @@ class TestSignal(unittest.TestCase):
     #  2. Run the test_data/signal_integrator.py file to get the "true" values
     #  3. Set the found decay rate in your new line
     test_coeffs = [
-        ('signal', bmfc.signal(), 545.22852,),
-        ('ones', [tf.constant(1.0)] * bmfc.count, 2917.0190,),
-        ('integers', [tf.constant(float(i)) for i in range(int(-bmfc.count / 2), int(bmfc.count / 2))], 457623.5,),
-        ('minus_point_ones', [tf.constant(-0.1)] * bmfc.count, 29.170193,),
+        ('signal', bmfc.signal(), 487.20193,),
+        ('ones', [tf.constant(1.0)] * bmfc.count, 2687.5159,),
+        ('integers', [tf.constant(float(i)) for i in range(int(-bmfc.count / 2), int(bmfc.count / 2))], 436425.156,),
+        ('minus_point_ones', [tf.constant(-0.1)] * bmfc.count, 26.875162,),
     ]
 
     def test_decay_rate_integration_methods_approx_equal(self):
@@ -29,14 +29,14 @@ class TestSignal(unittest.TestCase):
         Check that the _integrate_decay_rate() method that integrates a previously angle-integrated decay rate
         over q^2 returns something approximately equal to running odeint_fixed() over all variables.
 
-        Checks to within 6% as both methods use bins and add errors.
+        Checks to within 1% as both methods use bins and add errors.
         """
         # Check for different lists of coefficients
         for c_name, coeffs, expected_decay_rate in self.test_coeffs:
             with self.subTest(c_name=c_name):
                 actual = bmfs._integrate_decay_rate(coeffs)
                 # Check values are the same to within 0.1%
-                nt.assert_allclose(expected_decay_rate, actual.numpy(), atol=0, rtol=0.06)
+                nt.assert_allclose(expected_decay_rate, actual.numpy(), atol=0, rtol=0.01)
 
     def test_integrate_decay_rate_within_tolerance(self):
         """
@@ -46,7 +46,7 @@ class TestSignal(unittest.TestCase):
         for c_name, coeffs, _ in self.test_coeffs:
             with self.subTest(c_name=c_name):
                 true = tf_integrate.odeint(
-                    lambda _, q2: bmfs._decay_rate_angle_integrated(coeffs, q2),
+                    lambda _, q2: bmfs.decay_rate_angle_integrated(coeffs, q2),
                     0.0,
                     tf.stack([bmfs.q2_min, bmfs.q2_max]),
                 )[1]
@@ -61,6 +61,32 @@ class TestSignal(unittest.TestCase):
         self.longMessage = True
         self.assertEqual(123_456, tf.shape(events)[0].numpy())
         self.assertEqual(4, tf.shape(events)[1].numpy())
+
+    def test_decay_rate_frac_s(self):
+        """Check decay_rate_frac_s() returns the same values as a method that uses the moduli of the amplitudes"""
+        q2 = tf.linspace(bmfs.q2_min, bmfs.q2_max, 9)
+
+        for c_name, coeffs, _ in self.test_coeffs:
+            with self.subTest(c_name=c_name):
+                frac_s_bmf = bmfs.decay_rate_frac_s(coeffs, q2)
+
+                [a_para_l, a_para_r, a_perp_l, a_perp_r, a_0_l, a_0_r, a_00_l, a_00_r] = \
+                    bmfs._coeffs_to_amplitudes(coeffs, q2)
+                frac_s_mod = (
+                    (tf.math.abs(a_00_l) ** 2) * bmfs.mass_k600_k600 +
+                    (tf.math.abs(a_00_r) ** 2) * bmfs.mass_k600_k600
+                ) / (
+                    (tf.math.abs(a_00_l) ** 2) * bmfs.mass_k600_k600 +
+                    (tf.math.abs(a_0_l) ** 2) * bmfs.mass_K892_K892 +
+                    (tf.math.abs(a_para_l) ** 2) * bmfs.mass_K892_K892 +
+                    (tf.math.abs(a_perp_l) ** 2) * bmfs.mass_K892_K892 +
+                    (tf.math.abs(a_00_r) ** 2) * bmfs.mass_k600_k600 +
+                    (tf.math.abs(a_0_r) ** 2) * bmfs.mass_K892_K892 +
+                    (tf.math.abs(a_para_r) ** 2) * bmfs.mass_K892_K892 +
+                    (tf.math.abs(a_perp_r) ** 2) * bmfs.mass_K892_K892
+                )
+
+                nt.assert_array_equal(frac_s_mod.numpy(), frac_s_bmf.numpy())
 
 
 if __name__ == '__main__':

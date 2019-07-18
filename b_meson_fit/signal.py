@@ -1,5 +1,4 @@
 """Contains signal probability functions"""
-
 import math
 import numpy as np
 import tensorflow.compat.v2 as tf
@@ -11,11 +10,13 @@ q2_min = tf.constant(1.0)  # 1 (GeV/c^2)^2
 q2_max = tf.constant(8.0)  # 8 (GeV/c^2)^2
 mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
 
-# Fraction of signal that is S-wave
-frac_s = tf.constant(0.1)
+# Mass modification terms. See section 3.5 of arXiv:1504.00574v2
+mass_K892_K892 = tf.constant(0.80)
+mass_k600_k600 = tf.constant(0.18)
+mass_k600_K892 = tf.constant(0.22 - 0.23j, dtype=tf.complex64)
 
-_integration_dt = 0.0025
-_integration_points = tf.constant(np.arange(q2_min.numpy(), q2_max.numpy(), _integration_dt), dtype=tf.float32)
+# Step size to use for integrating
+integration_dt = 0.0025
 
 
 def nll(coeffs, events):
@@ -38,6 +39,10 @@ def nll(coeffs, events):
 
 def normalized_nll(coeffs, events):
     """Get the negative log likelihood divided by the signal event count
+
+    Args:
+        coeffs: List of scalar coefficient tensors
+        events: Tensor of shape (N, 4) with axis 1 representing params [q2, cos_theta_k, cos_theta_l, phi]
 
     Returns:
         Rank-1 tensor with shape (N)
@@ -106,14 +111,33 @@ def generate(coeffs, events_total=100_000, batch_size=10_000_000):
 
 
 def pdf(coeffs, events):
-    """Return probabilities for given events based on particular amplitude coefficients"""
+    """
+    Return probabilities for given events based on particular amplitude coefficients
+
+    Args:
+        coeffs: List of scalar coefficient tensors
+        events: Tensor of shape (N, 4) with axis 1 representing params [q2, cos_theta_k, cos_theta_l, phi]
+
+    Returns:
+        Rank-1 tensor with shape (N)
+    """
     decay_rates = decay_rate(coeffs, events)
     norm = _integrate_decay_rate(coeffs)
+    # We don't want -ve probabilities, however 0 causes inf problems so floor at 1e-30
     return tf.math.maximum(decay_rates / norm, 1e-30)
 
 
 def decay_rate(coeffs, events):
-    """Calculate the decay rates for given events based on particular amplitude coefficients"""
+    """
+    Calculate the decay rates for given events based on particular amplitude coefficients
+
+    Args:
+        coeffs: List of scalar coefficient tensors
+        events: Tensor of shape (N, 4) with axis 1 representing params [q2, cos_theta_k, cos_theta_l, phi]
+
+    Returns:
+        Rank-1 tensor with shape (N)
+    """
     [q2, cos_theta_k, cos_theta_l, phi] = tf.unstack(events, axis=1)
     amplitudes = _coeffs_to_amplitudes(coeffs, q2)
 
@@ -183,17 +207,50 @@ def decay_rate(coeffs, events):
         (j8_prime * sin_2theta_l * sin_theta_k * sin_phi)
     )
 
-    return ((1 - frac_s) * p_wave) + (frac_s * s_wave)
+    return p_wave + s_wave
 
 
-def _decay_rate_angle_integrated(coeffs, q2):
+def decay_rate_angle_integrated(coeffs, q2):
     """
     Calculate the angle-integrated decay rates for given q^2 values based on particular amplitude coefficients
 
-    Formula can be found in the Mathematica file "decay_rate.nb"
+    Args:
+        coeffs: List of scalar coefficient tensors
+        q2: Rank-1 tensor of shape (N) with q^2 values
+
+    Returns:
+        Rank-1 tensor with shape (N)
     """
     amplitudes = _coeffs_to_amplitudes(coeffs, q2)
 
+    return _decay_rate_angle_integrated_p_wave(amplitudes, q2) + _decay_rate_angle_integrated_s_wave(amplitudes)
+
+
+def decay_rate_frac_s(coeffs, q2):
+    """
+    Calculate the S-wave contribution fraction
+
+    Args:
+        coeffs: List of scalar coefficient tensors
+        q2: Rank-1 tensor of shape (N) with q^2 values
+
+    Returns:
+        Rank-1 tensor with shape (N)
+    """
+    amplitudes = _coeffs_to_amplitudes(coeffs, q2)
+
+    p_wave = _decay_rate_angle_integrated_p_wave(amplitudes, q2)
+    s_wave = _decay_rate_angle_integrated_s_wave(amplitudes)
+
+    return s_wave / (p_wave + s_wave)
+
+
+def _decay_rate_angle_integrated_p_wave(amplitudes, q2):
+    """
+    Calculate the P-wave contribution to the angle-integrated decay rate for given q^2 values and amplitudes
+
+    Formula can be found in the Mathematica file "decay_rate.nb" and the paper arXiv:1202.4266
+    """
     # Mass terms
     four_mass2_over_q2 = _four_mass2_over_q2(q2)
     beta2 = _beta2(four_mass2_over_q2)
@@ -203,13 +260,20 @@ def _decay_rate_angle_integrated(coeffs, q2):
     j1c = _j1c(amplitudes, four_mass2_over_q2)
     j2s = _j2s(amplitudes, beta2)
     j2c = _j2c(amplitudes, beta2)
+
+    return (1 / 4) * ((6 * j1s) + (3 * j1c) - (2 * j2s) - j2c)
+
+
+def _decay_rate_angle_integrated_s_wave(amplitudes):
+    """
+    Calculate the S-wave contribution to the angle-integrated decay rate for given q^2 values and amplitudes
+
+    Formula can be found in the Mathematica file "decay_rate.nb"
+    """
+    # Observables
     j1c_prime = _j1c_prime(amplitudes)
 
-    return (
-        (1 - frac_s) * (1 / 4) * ((6 * j1s) + (3 * j1c) - (2 * j2s) - j2c)
-    ) + (
-        frac_s * (9 / 16) * (math.pi ** 2) * j1c_prime
-    )
+    return 3 * j1c_prime
 
 
 def _four_mass2_over_q2(q2):
@@ -225,44 +289,58 @@ def _beta2(four_mass2_over_q2):
 def _j1s(amplitudes, beta2_mu, four_mass2_over_q2):
     """Calculate j1s angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _, _, _] = amplitudes
-    return ((2.0 + beta2_mu) / 4.0) * (
-        tf.math.abs(a_perp_l) ** 2 + tf.math.abs(a_para_l) ** 2 +
-        tf.math.abs(a_perp_r) ** 2 + tf.math.abs(a_para_r) ** 2
-    ) + four_mass2_over_q2 * tf.math.real(
-        a_perp_l * tf.math.conj(a_perp_r) +
-        a_para_l * tf.math.conj(a_para_r)
-    )
+    return (
+        ((2.0 + beta2_mu) / 4.0) * (
+            (tf.math.abs(a_perp_l) ** 2) +
+            (tf.math.abs(a_para_l) ** 2) +
+            (tf.math.abs(a_perp_r) ** 2) +
+            (tf.math.abs(a_para_r) ** 2)
+        ) + four_mass2_over_q2 * tf.math.real(
+            (a_perp_l * tf.math.conj(a_perp_r)) +
+            (a_para_l * tf.math.conj(a_para_r))
+        )
+    ) * mass_K892_K892
 
 
 def _j1c(amplitudes, four_mass2_over_q2):
     """Calculate j1c angular observable"""
     [_, _, _, _, a_0_l, a_0_r, _, _] = amplitudes
-    return tf.math.abs(a_0_l) ** 2 + tf.math.abs(a_0_r) ** 2 + \
-        four_mass2_over_q2 * (2 * tf.math.real(a_0_l * tf.math.conj(a_0_r)))
+    return (
+        (tf.math.abs(a_0_l) ** 2) +
+        (tf.math.abs(a_0_r) ** 2) +
+        (four_mass2_over_q2 * 2 * tf.math.real(a_0_l * tf.math.conj(a_0_r)))
+    ) * mass_K892_K892
 
 
 def _j2s(amplitudes, beta2_mu):
     """Calculate j2s angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _, _, _] = amplitudes
     return (beta2_mu / 4.0) * (
-        tf.math.abs(a_perp_l) ** 2 + tf.math.abs(a_para_l) ** 2 +
-        tf.math.abs(a_perp_r) ** 2 + tf.math.abs(a_para_r) ** 2
-    )
+        (tf.math.abs(a_perp_l) ** 2) +
+        (tf.math.abs(a_para_l) ** 2) +
+        (tf.math.abs(a_perp_r) ** 2) +
+        (tf.math.abs(a_para_r) ** 2)
+    ) * mass_K892_K892
 
 
 def _j2c(amplitudes, beta2_mu):
     """Calculate j2c angular observable"""
     [_, _, _, _, a_0_l, a_0_r, _, _] = amplitudes
-    return (- beta2_mu) * (tf.math.abs(a_0_l) ** 2 + tf.math.abs(a_0_r) ** 2)
+    return (- beta2_mu) * (
+        (tf.math.abs(a_0_l) ** 2) +
+        (tf.math.abs(a_0_r) ** 2)
+    ) * mass_K892_K892
 
 
 def _j3(amplitudes, beta2_mu):
     """Calculate j3 angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _, _, _] = amplitudes
     return (beta2_mu / 2.0) * (
-        tf.math.abs(a_perp_l) ** 2 - tf.math.abs(a_para_l) ** 2 +
-        tf.math.abs(a_perp_r) ** 2 - tf.math.abs(a_para_r) ** 2
-    )
+        (tf.math.abs(a_perp_l) ** 2) -
+        (tf.math.abs(a_para_l) ** 2) +
+        (tf.math.abs(a_perp_r) ** 2) -
+        (tf.math.abs(a_para_r) ** 2)
+    ) * mass_K892_K892
 
 
 def _j4(amplitudes, beta2_mu):
@@ -271,7 +349,7 @@ def _j4(amplitudes, beta2_mu):
     return (beta2_mu / tf.sqrt(2.0)) * (
         tf.math.real(a_0_l * tf.math.conj(a_para_l)) +
         tf.math.real(a_0_r * tf.math.conj(a_para_r))
-    )
+    ) * mass_K892_K892
 
 
 def _j5(amplitudes, beta_mu):
@@ -280,7 +358,7 @@ def _j5(amplitudes, beta_mu):
     return tf.sqrt(2.0) * beta_mu * (
         tf.math.real(a_0_l * tf.math.conj(a_perp_l)) -
         tf.math.real(a_0_r * tf.math.conj(a_perp_r))
-    )
+    ) * mass_K892_K892
 
 
 def _j6s(amplitudes, beta_mu):
@@ -289,7 +367,7 @@ def _j6s(amplitudes, beta_mu):
     return 2.0 * beta_mu * (
         tf.math.real(a_para_l * tf.math.conj(a_perp_l)) -
         tf.math.real(a_para_r * tf.math.conj(a_perp_r))
-    )
+    ) * mass_K892_K892
 
 
 def _j7(amplitudes, beta_mu):
@@ -298,7 +376,7 @@ def _j7(amplitudes, beta_mu):
     return tf.sqrt(2.0) * beta_mu * (
         tf.math.imag(a_0_l * tf.math.conj(a_para_l)) -
         tf.math.imag(a_0_r * tf.math.conj(a_para_r))
-    )
+    ) * mass_K892_K892
 
 
 def _j8(amplitudes, beta2_mu):
@@ -307,7 +385,7 @@ def _j8(amplitudes, beta2_mu):
     return (beta2_mu / tf.sqrt(2.0)) * (
         tf.math.imag(a_0_l * tf.math.conj(a_perp_l)) +
         tf.math.imag(a_0_r * tf.math.conj(a_perp_r))
-    )
+    ) * mass_K892_K892
 
 
 def _j9(amplitudes, beta2_mu):
@@ -316,21 +394,24 @@ def _j9(amplitudes, beta2_mu):
     return beta2_mu * (
         tf.math.imag(tf.math.conj(a_para_l) * a_perp_l) +
         tf.math.imag(tf.math.conj(a_para_r) * a_perp_r)
-    )
+    ) * mass_K892_K892
 
 
 def _j1c_prime(amplitudes):
     """Calculate j'1c angular observable"""
     [_, _, _, _, _, _, a_00_l, a_00_r] = amplitudes
-    return (1 / 3) * (tf.math.abs(a_00_l) ** 2 + tf.math.abs(a_00_r) ** 2)
+    return (1 / 3) * (
+        (tf.math.abs(a_00_l) ** 2) +
+        (tf.math.abs(a_00_r) ** 2)
+    ) * mass_k600_k600
 
 
 def _j1c_dblprime(amplitudes):
     """Calculate j''1c angular observable"""
     [_, _, _, _, a_0_l, a_0_r, a_00_l, a_00_r] = amplitudes
     return (2 / tf.sqrt(3.0)) * (
-        tf.math.real(a_00_l * tf.math.conj(a_0_l)) +
-        tf.math.real(a_00_r * tf.math.conj(a_0_r))
+        tf.math.real(a_00_l * tf.math.conj(a_0_l) * mass_k600_K892) +
+        tf.math.real(a_00_r * tf.math.conj(a_0_r) * mass_k600_K892)
     )
 
 
@@ -338,8 +419,8 @@ def _j4_prime(amplitudes):
     """Calculate j'4 angular observable"""
     [a_para_l, a_para_r, _, _, _, _, a_00_l, a_00_r] = amplitudes
     return tf.sqrt(2.0 / 3.0) * (
-        tf.math.real(a_00_l * tf.math.conj(a_para_l)) +
-        tf.math.real(a_00_r * tf.math.conj(a_para_r))
+        tf.math.real(a_00_l * tf.math.conj(a_para_l) * mass_k600_K892) +
+        tf.math.real(a_00_r * tf.math.conj(a_para_r) * mass_k600_K892)
     )
 
 
@@ -347,8 +428,8 @@ def _j5_prime(amplitudes):
     """Calculate j'5 angular observable"""
     [_, _, a_perp_l, a_perp_r, _, _, a_00_l, a_00_r] = amplitudes
     return 2 * tf.sqrt(2.0 / 3.0) * (
-        tf.math.real(a_00_l * tf.math.conj(a_perp_l)) -
-        tf.math.real(a_00_r * tf.math.conj(a_perp_r))
+        tf.math.real(a_00_l * tf.math.conj(a_perp_l) * mass_k600_K892) -
+        tf.math.real(a_00_r * tf.math.conj(a_perp_r) * mass_k600_K892)
     )
 
 
@@ -356,8 +437,8 @@ def _j7_prime(amplitudes):
     """Calculate j'7 angular observable"""
     [a_para_l, a_para_r, _, _, _, _, a_00_l, a_00_r] = amplitudes
     return 2 * tf.sqrt(2.0 / 3.0) * (
-        tf.math.imag(a_00_l * tf.math.conj(a_para_l)) -
-        tf.math.imag(a_00_r * tf.math.conj(a_para_r))
+        tf.math.imag(a_00_l * tf.math.conj(a_para_l) * mass_k600_K892) -
+        tf.math.imag(a_00_r * tf.math.conj(a_para_r) * mass_k600_K892)
     )
 
 
@@ -365,19 +446,22 @@ def _j8_prime(amplitudes):
     """Calculate j'8 angular observable"""
     [_, _, a_perp_l, a_perp_r, _, _, a_00_l, a_00_r] = amplitudes
     return tf.sqrt(2.0 / 3.0) * (
-        tf.math.imag(a_00_l * tf.math.conj(a_perp_l)) +
-        tf.math.imag(a_00_r * tf.math.conj(a_perp_r))
+        tf.math.imag(a_00_l * tf.math.conj(a_perp_l) * mass_k600_K892) +
+        tf.math.imag(a_00_r * tf.math.conj(a_perp_r) * mass_k600_K892)
     )
 
 
 def _integrate_decay_rate(coeffs):
     """
-    Integrate decay rate function over all angles and a q^2 range for particular amplitude coefficients
+    Integrate previously angle integrated decay rate function over q^2 for particular amplitude coefficients
 
     Uses trapezoid rule as Tensorflow's odeint() is much slower
     """
-    # Get tensor of decay_rates for our integration points
-    decay_rates = _decay_rate_angle_integrated(coeffs, _integration_points)
+    # Generate q^2 points to integrate
+    q2 = tf.constant(np.arange(q2_min.numpy(), q2_max.numpy(), integration_dt), dtype=tf.float32)
+
+    # Get tensor of decay_rates for our q^2 points
+    decay_rates = decay_rate_angle_integrated(coeffs, q2)
 
     # Make tensors of the start and end decay rates values for our trapezoids
     # So if decay_rates=[10.0, 25.0, 45.0, 20.0]
@@ -385,7 +469,7 @@ def _integrate_decay_rate(coeffs):
     end_rates = decay_rates[1:]     # ... [25.0, 45.0, 20.0]
 
     # Make a tensor of our trapezoid areas
-    trapezoids = (tf.math.add(start_rates, end_rates) / 2.0) * _integration_dt
+    trapezoids = (tf.math.add(start_rates, end_rates) / 2.0) * integration_dt
 
     # Add the trapezoids together
     return tf.reduce_sum(trapezoids)

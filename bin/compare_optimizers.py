@@ -13,15 +13,13 @@ deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 tf.enable_v2_behavior()
 
-# Test name, Optimizer name, Optimizer params, Gradient clip, Gradient cutoff, Cutoff count, Cutoff value
+# Test name, Optimizer name, Optimizer params, Gradient clip
 combos = [
-    # ['Adam_0.1_noclip_nocutoff', 'Adam', {'learning_rate': 0.1}, None, False, None, None],
-    ['Adam_0.2_noclip_nocutoff', 'Adam', {'learning_rate': 0.2}, None, False, None, None],
-    ['Adam_0.2_noclip_defaultcutoff', 'Adam', {'learning_rate': 0.2}, None, True, None, None],
-    # ['Adam_0.2_clip_5.0_nocutoff', 'Adam', {'learning_rate': 0.2}, 5.0, False, None, None],
-    # ['Adam_0.2_clip_5.0_defaultcutoff', 'Adam', {'learning_rate': 0.2}, 5.0, True, None, None],
+    ['Adam_0.1_noclip_nocutoff', 'Adam', {'learning_rate': 0.1}, None],
+    ['AmsGrad_0.1_noclip_nocutoff', 'Adam', {'learning_rate': 0.1, 'amsgrad': True}, None],
+    ['AmsGrad_0.2_noclip_nocutoff', 'Adam', {'learning_rate': 0.2, 'amsgrad': True}, None],
 ]
-iterations = 5000
+iterations = 2000
 # Set all default fit coefficients to the same value to make comparison possible
 bmf.coeffs.fit_default = 1.0
 
@@ -35,7 +33,7 @@ with bmf.Script() as script:
     log.signal_line(bmf.coeffs.fit(), signal_coeffs, iterations)
 
     for combo in combos:
-        test_name, name, params, clip, cutoff, cutoff_count, cutoff_value = combo
+        test_name, name, params, clip = combo
 
         optimizer = bmf.Optimizer(
             bmf.coeffs.fit(),  # Generate new fit coefficients for each run
@@ -43,9 +41,6 @@ with bmf.Script() as script:
             opt_name=name,
             opt_args=params,
             grad_clip=clip,
-            grad_cutoff=cutoff,
-            grad_cutoff_count=cutoff_count,
-            grad_cutoff_value=cutoff_value
         )
 
         # Use tqdm's trange() to print a progress bar for each optimizer/learning rate combo

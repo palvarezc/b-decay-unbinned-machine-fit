@@ -28,23 +28,12 @@ any known reasons why it wouldn't run.
 
 ## Fitting
 
-The script [fit.py](./bin/fit.py) can be used to run a fitting ensemble. Fitted coefficients will be outputted to a CSV file.
-If the script is quit, if it continue appending to the same file the next time it is started.
+The script [fit.py](./bin/fit.py) can be used to run a fitting ensemble. Fitted coefficients will be outputted to a
+CSV file. If the script is quit, if it continue appending to the same file the next time it is started.
 
 The fit will start with random coefficients between `-100%` and `+100%` of the signal value. 
-Some coefficients may take longer than others, in which case the earlier converged ones can start to suffer from
-exploding gradients. One technique to address this
-has been to implement a timeline of previous gradients. If a gradient stddev is less than `5e-7` over `100` 
-iterations, then that coefficient is considered converged and no further optimizing will be applied to it. However, 
-this method adds a not insignificant performance hit as it ends up processing on the CPU rather than GPU.
-
-There can still be occasional times where the timeline and stopping certain coefficients is not enough and gradients
-still won't settle. To address this, the `fit.py` script will restart the iteration with different random
+To address any instances where coefficients won't converge, the script will restart the iteration with different random
 coefficients if the fit hasn't converged for `20,000` iterations.
-
-Further work needs to be done to see if a combination of tuning optimizer hyper-parameters (e.g. `epsilon`),
-gradient clipping, and the iteration restart count can be enough to make fitting work consistently fast and well
-without the performance slow down of the timeline.
 
 ## Using Tensorboard
 
@@ -84,8 +73,6 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 ## Roadmap
 
 * Add real signal values for a_00_l and a_00_r.
-* Investigate whether just aborting non-converging runs is quicker than using the gradient timeline. For this
-to work there will need to be another method of determining when fit has converged.
 * Tune the optimizer better to improve fitting performance and quality.
 * Do large ensemble runs and plot results.
 * Compare physics models. Use different signal coefficients and compare P values.

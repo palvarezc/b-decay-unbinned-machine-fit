@@ -92,7 +92,7 @@ class Log:
         with self._writer(coeffs_name).as_default():
             tf.summary.scalar('normalized_nll', optimizer.normalized_nll, step=optimizer.step)
             if optimizer.grads:
-                tf.summary.scalar('gradients/max', tf.math.abs(tf.reduce_max(optimizer.grads)), step=optimizer.step)
+                tf.summary.scalar('gradients/max', optimizer.grad_max, step=optimizer.step)
                 tf.summary.scalar('norms/global', tf.linalg.global_norm(optimizer.grads), step=optimizer.step)
 
             # All trainable coefficients and gradients as individual scalars

@@ -48,7 +48,7 @@ class CsvWriter:
         """
         self.current_id = self.current_id + 1
         coeff_floats = [c.numpy() for c in coeffs]
-        row = {'id': self.current_id, 'normalized_nll': normalized_nll, **dict(zip(bmfc.names, coeff_floats))}
+        row = {'id': self.current_id, 'normalized_nll': normalized_nll.numpy(), **dict(zip(bmfc.names, coeff_floats))}
         self.writer.writerow(row)
         self.handle.flush()
 

@@ -92,11 +92,8 @@ names = ['{}_{}'.format(a, p) for a in amplitude_names for p in param_names]
 latex_names = ['{} {}'.format(a, p) for a in amplitude_latex_names for p in param_latex_names]
 count = len(names)
 
-# If fit_default is not set, then fit coefficients should be randomly generated between
-#  fit_random_min and fit_random_max
+# If fit_default is not set, then fit coefficients should be randomly generated (See fit())
 fit_default = None
-fit_random_min = -5.0
-fit_random_max = 5.0
 
 
 def signal():
@@ -108,14 +105,31 @@ def signal():
 def fit():
     """Construct a flat list of tensors to represent what we're going to fit.
 
+    If the global fit_default is set as None then generate random initial values
+    of +/- 100% of the signal value for this coefficient.
+
     Tensors that represent non-fixed coefficients in this basis are tf.Variables
     Tensors that represent fixed coefficients in this basis set as constant 0's
     """
     fit_trainable_ids = list(itertools.chain(range(0, 21), range(24, 27), [36], [39], [42], [45]))
+
     fit_coeffs = []
+    signal_coeffs = signal()
+
     for i in range(count):
         if i in fit_trainable_ids:
-            coeff = tf.Variable(_default_fit(), name=names[i])
+            if fit_default:
+                init_value = fit_default
+            else:
+                # fit_random_min = -5.0
+                # fit_random_max = 5.0
+                init_value = tf.random.uniform(
+                    shape=(),
+                    minval=tf.math.minimum(0.0, 2 * signal_coeffs[i]),
+                    maxval=tf.math.maximum(0.0, 2 * signal_coeffs[i]),
+                )
+
+            coeff = tf.Variable(init_value, name=names[i])
         else:
             coeff = tf.constant(0.0)
         fit_coeffs.append(coeff)
@@ -145,10 +159,3 @@ def to_str(coeffs):
     for c in coeffs:
         c_list.append('{:5.2f}{}'.format(c.numpy(), ' ' if is_trainable(c) else '*'))
     return ' '.join(c_list)
-
-
-def _default_fit():
-    if fit_default:
-        return fit_default
-
-    return tf.random.uniform(shape=(), minval=fit_random_min, maxval=fit_random_max)

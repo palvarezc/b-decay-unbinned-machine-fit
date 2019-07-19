@@ -40,6 +40,8 @@ class TestCoeffs(unittest.TestCase):
         """Check fit coefficients have correct #, the right ones are trainable,
             and that randomisation/defaults work
         """
+        signal = bmfc.signal()
+
         for name, default in self.fit_coeff_defaults:
             with self.subTest(name=name):
                 bmfc.fit_default = default
@@ -50,10 +52,21 @@ class TestCoeffs(unittest.TestCase):
                 for i in range(48):
                     if i in self.fit_trainable_ids:
                         if default is not None:
-                            self.assertEqual(default, fit[i].numpy())
+                            # Randomization should be disabled
+                            self.assertEqual(default, fit[i].numpy(), 'Coeff {} != {}'.format(i, default))
                         else:
-                            self.assertTrue(bmfc.fit_random_min < fit[i].numpy() < bmfc.fit_random_max)
-                        self.assertTrue(bmfc.is_trainable(fit[i]))
+                            # Randomization should be enabled. Check within +/- 100% of signal
+                            if signal[i].numpy() < 0:
+                                random_min = 2.0 * signal[i].numpy()
+                                random_max = 0.0
+                            else:
+                                random_min = 0.0
+                                random_max = 2.0 * signal[i].numpy()
+                            self.assertTrue(
+                                random_min < fit[i].numpy() < random_max,
+                                'Coeff {} fails {} < {} < {}'.format(i, random_min, fit[i].numpy(), random_max)
+                            )
+                        self.assertTrue(bmfc.is_trainable(fit[i]), 'Coeff {} should be trainable'.format(i))
                     else:
-                        self.assertEqual(0.0, fit[i].numpy())
-                        self.assertFalse(bmfc.is_trainable(fit[i]))
+                        self.assertEqual(0.0, fit[i].numpy(), 'Coeff {} != 0.0'.format(i))
+                        self.assertFalse(bmfc.is_trainable(fit[i]), 'Coeff {} should not be trainable'.format(i))

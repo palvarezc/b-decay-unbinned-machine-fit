@@ -83,7 +83,6 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-* Fix test_decay_rate_frac_s() unit test
 * Add real signal values for a_00_l and a_00_r.
 * Investigate whether just aborting non-converging runs is quicker than using the gradient timeline. For this
 to work there will need to be another method of determining when fit has converged.

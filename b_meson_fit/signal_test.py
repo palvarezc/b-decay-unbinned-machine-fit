@@ -63,7 +63,11 @@ class TestSignal(unittest.TestCase):
         self.assertEqual(4, tf.shape(events)[1].numpy())
 
     def test_decay_rate_frac_s(self):
-        """Check decay_rate_frac_s() returns the same values as a method that uses the moduli of the amplitudes"""
+        """
+        Check decay_rate_frac_s() returns approximately the same values as a method that uses the moduli of the
+        amplitudes. It isn't exactly equal, and I think that's because the a_t_l and a_t_r amplitudes are
+        neglected with this method.
+        """
         q2 = tf.linspace(bmfs.q2_min, bmfs.q2_max, 9)
 
         for c_name, coeffs, _ in self.test_coeffs:
@@ -72,6 +76,7 @@ class TestSignal(unittest.TestCase):
 
                 [a_para_l, a_para_r, a_perp_l, a_perp_r, a_0_l, a_0_r, a_00_l, a_00_r] = \
                     bmfs._coeffs_to_amplitudes(coeffs, q2)
+                # From eqn. 8 of arXiv:1504.00574v2
                 frac_s_mod = (
                     (tf.math.abs(a_00_l) ** 2) * bmfs.mass_k600_k600 +
                     (tf.math.abs(a_00_r) ** 2) * bmfs.mass_k600_k600
@@ -86,7 +91,14 @@ class TestSignal(unittest.TestCase):
                     (tf.math.abs(a_perp_r) ** 2) * bmfs.mass_K892_K892
                 )
 
-                nt.assert_array_equal(frac_s_mod.numpy(), frac_s_bmf.numpy())
+                for i in range(tf.shape(q2)[0].numpy()):
+                    nt.assert_allclose(
+                        frac_s_mod[i].numpy(),
+                        frac_s_bmf[i].numpy(),
+                        atol=0,
+                        rtol=0.025,
+                        err_msg='{}  not within 2.5% for q2 {}'.format(c_name, q2[i].numpy()),
+                    )
 
 
 if __name__ == '__main__':

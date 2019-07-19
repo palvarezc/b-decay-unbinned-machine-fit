@@ -35,7 +35,6 @@ class Optimizer:
         self.fit_coeffs = fit_coeffs
 
         self.trainables = self._remaining = bmfc.trainables(self.fit_coeffs)
-        self.train_mask = tf.fill([len(self.trainables)], True)
         self.signal_events = signal_events
 
         if opt_args and not opt_name:
@@ -60,7 +59,7 @@ class Optimizer:
     def minimize(self):
         """Increment step counter and calculate gradients"""
         self.step.assign(self.step + 1)
-        self.normalized_nll, self.grads, self.grad_max = self._get_gradients(self.trainables)
+        self.normalized_nll, self.grads, self.grad_max = self._get_gradients()
 
     def converged(self):
         """Have all our coefficients finished training?
@@ -73,16 +72,16 @@ class Optimizer:
         return self.grad_max.numpy() < self.grad_max_cutoff
 
     @tf.function
-    def _get_gradients(self, to_train):
+    def _get_gradients(self):
         """Calculate and apply gradients for this step"""
         with tf.GradientTape() as tape:
             normalized_nll = self._normalized_nll()
-        grads = tape.gradient(normalized_nll, to_train)
+        grads = tape.gradient(normalized_nll, self.trainables)
 
         if self.grad_clip:
             grads, _ = tf.clip_by_global_norm(grads, self.grad_clip)
 
-        self.optimizer.apply_gradients(zip(grads, to_train))
+        self.optimizer.apply_gradients(zip(grads, self.trainables))
 
         return normalized_nll, grads, tf.math.abs(tf.reduce_max(grads))
 

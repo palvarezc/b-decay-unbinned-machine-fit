@@ -1,56 +1,94 @@
 #!/usr/bin/env python
 """Fit amplitude coefficients to signal events"""
 
-import matplotlib.pyplot as plt
+import argparse
 import os
-import seaborn as sns
+import shutil
 import tensorflow.compat.v2 as tf
 
 import b_meson_fit as bmf
 
+# Only do plots if running PyCharm
+if 'PYCHARM_HOSTED' in os.environ:
+    import matplotlib.pylab as plt
+    import seaborn as sns
+
 tf.enable_v2_behavior()
 
-# Append our found coefficients to this filename in the project folder
-csv_filename = 'fit.csv'
-csv_filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', csv_filename)
-# Whether to log for Tensorboard (Has large performance hit)
-log = False
-# Times to run
-iterations = 10
-# Restart iteration if we haven't converged after this many steps
-step_restart = 20_000
-# Number of signal events to generate per iteration
-signal_count = 2400
+columns = shutil.get_terminal_size().columns
+parser = argparse.ArgumentParser(
+    description='Fit coefficients to generated toy signal(s).',
+    formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=columns, width=columns),
+)
+parser.add_argument(
+    '-c',
+    '--csv',
+    dest='csv_file',
+    help='write results to this CSV file'
+)
+parser.add_argument(
+    '-i',
+    '--iterations',
+    dest='iterations',
+    default=1,
+    help='number of iterations to run (default: 1)'
+)
+parser.add_argument(
+    '-l',
+    '--log',
+    dest='log',
+    action='store_true',
+    help='store logs for Tensorboard (has large performance hit)'
+)
+parser.add_argument(
+    '-m',
+    '--max-step',
+    dest='max_step',
+    default=20_000,
+    help='restart iteration if not converged after this many steps (default: 20000)'
+)
+parser.add_argument(
+    '-s',
+    '--signal-count',
+    dest='signal_count',
+    default=2400,
+    help='number of signal events to generated per fit (default: 2400)'
+)
+args = parser.parse_args()
 
+iteration = 0
 with bmf.Script() as script:
-    if log:
+    if args.log:
         log = bmf.Log(script.name)
 
-    writer = bmf.CsvWriter(csv_filepath)
-    if writer.current_id >= iterations:
-        bmf.stdout('{} already contains {} iterations'.format(csv_filename, iterations))
-        exit(0)
+    if args.csv_file is not None:
+        writer = bmf.CsvWriter(args.csv_file)
+        if writer.current_id >= args.iterations:
+            bmf.stdout('{} already contains {} iteration(s)'.format(args.csv_file, args.iterations))
+            exit(0)
+        iteration = writer.current_id
 
-    while writer.current_id < iterations:
-        iteration = writer.current_id + 1
-        bmf.stdout('Starting iteration {}/{}'.format(iteration, iterations))
+    while iteration < args.iterations:
+        iteration = iteration + 1
+        bmf.stdout('Starting iteration {}/{}'.format(iteration, args.iterations))
 
         signal_coeffs = bmf.coeffs.signal()
-        signal_events = bmf.signal.generate(signal_coeffs, events_total=signal_count)
+        signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
 
-        # Plot our signal distributions for each independent variable
-        fig, axes = plt.subplots(nrows=2, ncols=2)
-        fig.suptitle('Signal (Iteration {}/{})'.format(iteration, iterations))
-        titles = [
-            r'$q^2$',
-            r'$\cos{\theta_k}$',
-            r'$\cos{\theta_l}$',
-            r'$\phi$'
-        ]
-        for ax, feature, title in zip(axes.flatten(), signal_events.numpy().transpose(), titles):
-            sns.distplot(feature, ax=ax, bins=20)
-            ax.set(title=title)
-        plt.show()
+        # If running if PyCharm, plot our signal distributions for each independent variable
+        if 'PYCHARM_HOSTED' in os.environ:
+            fig, axes = plt.subplots(nrows=2, ncols=2)
+            fig.suptitle('Signal (Iteration {}/{})'.format(iteration, args.iterations))
+            titles = [
+                r'$q^2$',
+                r'$\cos{\theta_k}$',
+                r'$\cos{\theta_l}$',
+                r'$\phi$'
+            ]
+            for ax, feature, title in zip(axes.flatten(), signal_events.numpy().transpose(), titles):
+                sns.distplot(feature, ax=ax, bins=20)
+                ax.set(title=title)
+            plt.show()
 
         attempt = 1
         converged = False
@@ -60,7 +98,7 @@ with bmf.Script() as script:
 
             def print_step():
                 bmf.stdout(
-                    "Iteration:", "{}/{}". format(iteration, iterations),
+                    "Iteration:", "{}/{}". format(iteration, args.iterations),
                     "Attempt", attempt,
                     "Step:", optimizer.step,
                     "normalized_nll:", optimizer.normalized_nll,
@@ -73,16 +111,17 @@ with bmf.Script() as script:
 
             while True:
                 optimizer.minimize()
-                if log:
+                if args.log:
                     log.coefficients('fit_{}'.format(iteration), optimizer, signal_coeffs)
                 if optimizer.converged():
                     converged = True
                     print_step()
-                    writer.write_coeffs(optimizer.normalized_nll, fit_coeffs)
+                    if args.csv_file is not None:
+                        writer.write_coeffs(optimizer.normalized_nll, fit_coeffs)
                     break
                 if optimizer.step.numpy() % 100 == 0:
                     print_step()
-                if optimizer.step >= step_restart:
-                    bmf.stderr('No convergence after {} steps. Restarting iteration'.format(step_restart))
+                if optimizer.step >= args.max_step:
+                    bmf.stderr('No convergence after {} steps. Restarting iteration'.format(args.max_step))
                     attempt = attempt + 1
                     break

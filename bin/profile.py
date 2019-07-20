@@ -14,7 +14,7 @@ with bmf.Script() as script:
     if not bmf.user_is_root():
         bmf.stderr('This script needs root permissions. You can run it from the project folder with:')
         bmf.stderr(
-            'env PYTHONPATH="${PYTHON_PATH}:`pwd`" sudo -E --preserve-env=PYTHONPATH python bin/profile.py')
+            'sudo -E --preserve-env=PYTHONPATH ./bin/profile.py')
         exit(1)
 
     signal_coeffs = bmf.coeffs.signal()

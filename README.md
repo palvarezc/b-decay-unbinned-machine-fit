@@ -17,30 +17,39 @@ Install dependencies:
 pip install --user --upgrade --upgrade-strategy only-if-needed -r requirements.txt
 ```
 
+To run scripts at the CLI your `PYTHONPATH` will need setting correctly. One way of doing that is adding
+`export PYTHONPATH="/path/to/repo"` to your `~/.bashrc`.
+
 ## Development
 
-This software has been developed with the [PyCharm](https://www.jetbrains.com/pycharm/) IDE. The unit tests and 
-scripts should just run within it with no configuration necessary. If you're using something else, I assume
-you know how to set your `PYTHONPATH` correctly.
-
-Linux has been used for this development. Whilst none of this software has been tested on Windows, there aren't
-any known reasons why it wouldn't run.
+This software has been developed on Linux with Python 3.6 and the [PyCharm](https://www.jetbrains.com/pycharm/) IDE.
+The unit tests and scripts should just run within PyCharm with no configuration necessary. Whilst none of this software
+has been tested on Windows, there aren't any known reasons why it wouldn't run.
 
 ## Fitting
 
-The script [fit.py](./bin/fit.py) can be used to run a fitting ensemble. Fitted coefficients will be outputted to a
-CSV file. If the script is quit, if it continue appending to the same file the next time it is started.
+The script [fit.py](./bin/fit.py) can be used to run a fitting ensemble. The fits will start with random coefficients
+between `-100%` and `+100%` of the signal coefficient values. Run `./bin/fit.py --help` to see all options.
 
-The fit will start with random coefficients between `-100%` and `+100%` of the signal value. 
-To address any instances where coefficients won't converge, the script will restart the iteration with different random
-coefficients if the fit hasn't converged for `20,000` iterations.
+You can run it for multiple iterations with either the `-i` or `--iterations` arguments. E.g.:
+
+```
+$ ./bin/fit.py -i 1000
+```
+
+Results can be logged to a CSV file with the `-c` or `--csv` arguments. If the script is quit, it will continue
+appending to the same file when it is restarted. E.g.:
+
+```
+$ ./bin/fit.py -i 1000 -c myfile.csv
+```
 
 ## Using Tensorboard
 
 [Tensorboard](https://www.tensorflow.org/guide/summaries_and_tensorboard) can be used to tune the optimizer. Values
-will be logged for Tensorboard from either [compare_optimizers.py](./bin/compare_optimizers.py), or from 
-[fit.py](./bin/fit.py) if `log` is set to `True`. Note that logging statistics has a large performance hit
-so should not be used for production runs. Once scripts that have logging enabled start, they will output
+will be logged for Tensorboard from either [compare_optimizers.py](./bin/compare_optimizers.py), or when running the 
+[fit.py](./bin/fit.py) script with the `-l` or `--log` arguments. Note that logging statistics has a large performance
+hit so should not be used for production runs. Once scripts that have logging enabled start, they will output
 the command to start Tensorboard. Additionally they will output a `Filter regex` that can be used in the left hand pane
 of the `Scalars` page to filter that particular run.
 
@@ -54,7 +63,7 @@ The script must be run as root due to Nvidia's
 ["recent permission restrictions"](https://devtalk.nvidia.com/default/topic/1047744/jetson-agx-xavier/jetson-xavier-official-tensorflow-package-can-t-initialize-cupti/post/5319306/#5319306).
 You can run it from the project folder with:
 ```
-$ env PYTHONPATH="${PYTHON_PATH}:`pwd`" sudo -E --preserve-env=PYTHONPATH python bin/profile.py
+$ sudo -E --preserve-env=PYTHONPATH ./bin/profile.py
 ```
 Once the script starts it will output the command to start Tensorboard (which shouldn't be run as root).
 
@@ -72,10 +81,14 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
+* Plot histograms of results
+* Pass in learning_rate from CLI
+* Add progress bar to fit.py
+* Hide all deprecation warnings?
+* Merge `fit.py` and `compare_optimizers.py`?
 * Add real signal values for a_00_l and a_00_r.
 * Tune the optimizer better to improve fitting performance and quality.
 * Do large ensemble runs and plot results.
 * Compare physics models. Use different signal coefficients and compare P values.
-* Change scripts to pass options as command line options instead of having variables at the top of files.
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
 and fitting based on nuisance parameters for those polynomials.

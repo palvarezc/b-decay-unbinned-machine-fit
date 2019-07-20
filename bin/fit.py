@@ -73,7 +73,7 @@ with bmf.Script() as script:
     if args.csv_file is not None:
         writer = bmf.CsvWriter(args.csv_file)
         if writer.current_id > 0:
-            bmf.stdout('{} already contains {} iteration(s)'.format(args.csv_file, args.iterations))
+            bmf.stdout('{} already contains {} iteration(s)'.format(args.csv_file, writer.current_id))
             bmf.stdout('')
             if writer.current_id >= args.iterations:
                 bmf.stderr('Nothing to do')

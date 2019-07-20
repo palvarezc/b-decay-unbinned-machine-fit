@@ -1,6 +1,6 @@
 """Write coefficients to a CSV file for ensamble runs.
 
-File will contain columns id,a_para_l_re_alpha,...,a_zero_r_im_gamma
+File will contain columns id,normalized_nll,a_para_l_re_alpha,...,a_zero_r_im_gamma
 
 Writer will append to a current file if it exists.
 

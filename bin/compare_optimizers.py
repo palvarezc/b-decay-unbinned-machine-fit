@@ -3,12 +3,13 @@
 Generate metrics for different optimizers and learning rates for comparison in Tensorboard
 """
 import tensorflow.compat.v2 as tf
+import tqdm
 from tensorflow.python.util import deprecation
-from tqdm import trange
 
 import b_meson_fit as bmf
 
 # Force deprecation warnings off to stop them breaking our progress bars. The warnings are from TF internal code anyway.
+# You should probably comment out if whilst upgrading Tensorflow.
 deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 tf.enable_v2_behavior()
@@ -44,7 +45,7 @@ with bmf.Script() as script:
         )
 
         # Use tqdm's trange() to print a progress bar for each optimizer/learning rate combo
-        with trange(iterations, desc=test_name) as t:
+        with tqdm.trange(iterations, desc=test_name) as t:
             for i in t:
                 optimizer.minimize()
                 log.coefficients(test_name, optimizer, signal_coeffs)

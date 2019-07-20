@@ -29,6 +29,7 @@ class Script:
     def __enter__(self):
         """Print on script startup"""
         stdout('Starting {}'.format(self.name))
+        stdout('')
         self.start_time = time.time()
 
         if self.device:

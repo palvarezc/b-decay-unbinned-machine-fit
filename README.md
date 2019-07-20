@@ -81,14 +81,13 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-* Plot histograms of results
-* Pass in learning_rate from CLI
-* Add progress bar to fit.py
-* Hide all deprecation warnings?
-* Merge `fit.py` and `compare_optimizers.py`?
+* Plot histograms of results (Allow for multiple CSV files).
+* Pass in learning_rate from CLI.
+* Merge `fit.py` and `compare_optimizers.py`?.
 * Add real signal values for a_00_l and a_00_r.
+* Do ensemble runs for different learning rates and compare results.
 * Tune the optimizer better to improve fitting performance and quality.
-* Do large ensemble runs and plot results.
-* Compare physics models. Use different signal coefficients and compare P values.
+* Add SM coefficients to compare physics models. Compare P values.
+* Get scripts to output plots for scientific publication.
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
 and fitting based on nuisance parameters for those polynomials.

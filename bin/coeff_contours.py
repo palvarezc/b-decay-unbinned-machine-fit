@@ -3,6 +3,8 @@
 Plot negative log likelihood surface for two coefficients whilst keeping others fixed at signal values.
 
 The red lines mark the true signal values
+
+Used to test that coefficients show minimums in correct places.
 """
 
 import matplotlib.pyplot as plt

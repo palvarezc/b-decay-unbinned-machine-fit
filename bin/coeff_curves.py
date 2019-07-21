@@ -3,6 +3,8 @@
 Plot each coefficient vs. negative log likelihood whilst keeping other coefficients fixed at signal values.
 
 The blue curve is the likelihood curve. The red line denotes the true signal value.
+
+Used to test that all coefficients show minimums in correct places.
 """
 
 import matplotlib.pyplot as plt

@@ -36,7 +36,7 @@ with bmf.Script() as script:
             signal_events,
             opt_name=name,
             learning_rate=learning_rate,
-            opt_args=params,
+            opt_params=params,
             grad_clip=clip,
         )
 

@@ -31,8 +31,8 @@ parser.add_argument(
     '-d',
     '--device',
     dest='device',
-    help='use this device e.g. CPU:0, GPU:0, GPU:1 (default: {})'.format(bmf.Script.device_default),
     default=bmf.Script.device_default,
+    help='use this device e.g. CPU:0, GPU:0, GPU:1 (default: {})'.format(bmf.Script.device_default),
 )
 parser.add_argument(
     '-i',
@@ -58,6 +58,37 @@ parser.add_argument(
     help='restart iteration if not converged after this many steps (default: 20000)'
 )
 parser.add_argument(
+    '-o',
+    '--opt-name',
+    dest='opt_name',
+    default=bmf.Optimizer.opt_name_default,
+    help='optimizer algorithm to use (default: {})'.format(bmf.Optimizer.opt_name_default),
+)
+parser.add_argument(
+    '-p',
+    '--opt-param',
+    nargs=2,
+    dest='opt_params',
+    action='append',
+    metavar=('PARAM_NAME', 'VALUE'),
+    help='additional params to pass to optimizer - can be specified multiple times'
+)
+parser.add_argument(
+    '-P',
+    '--grad-clip',
+    dest='grad_clip',
+    type=float,
+    help='clip gradients by this global norm'
+)
+parser.add_argument(
+    '-r',
+    '--learning-rate',
+    dest='learning_rate',
+    type=float,
+    default=bmf.Optimizer.learning_rate_default,
+    help='optimizer learning rate (default: {})'.format(bmf.Optimizer.learning_rate_default),
+)
+parser.add_argument(
     '-s',
     '--signal-count',
     dest='signal_count',
@@ -65,7 +96,27 @@ parser.add_argument(
     default=2400,
     help='number of signal events to generated per fit (default: 2400)'
 )
+parser.add_argument(
+    '-u',
+    '--grad-max-cutoff',
+    dest='grad_max_cutoff',
+    type=float,
+    default=bmf.Optimizer.grad_max_cutoff_default,
+    help='count fit as converged when max gradient is less than this ' +
+         '(default: {})'.format(bmf.Optimizer.grad_max_cutoff_default),
+)
 args = parser.parse_args()
+
+# Convert optimizer params to dict
+opt_params = {}
+if args.opt_params:
+    for idx, _ in enumerate(args.opt_params):
+        # Change any opt param values to floats if possible
+        try:
+            args.opt_params[idx][1] = float(args.opt_params[idx][1])
+        except ValueError:
+            pass
+        opt_params[args.opt_params[idx][0]] = args.opt_params[idx][1]
 
 iteration = 0
 with bmf.Script(device=args.device) as script:
@@ -112,7 +163,15 @@ with bmf.Script(device=args.device) as script:
         converged = False
         while not converged:
             fit_coeffs = bmf.coeffs.fit()
-            optimizer = bmf.Optimizer(fit_coeffs, signal_events)
+            optimizer = bmf.Optimizer(
+                fit_coeffs,
+                signal_events,
+                opt_name=args.opt_name,
+                learning_rate=args.learning_rate,
+                opt_params=opt_params,
+                grad_clip=args.grad_clip,
+                grad_max_cutoff=args.grad_max_cutoff
+            )
 
             while True:
                 optimizer.minimize()

@@ -44,11 +44,32 @@ appending to the same file when it is restarted. E.g.:
 $ ./bin/fit.py -i 1000 -c myfile.csv
 ```
 
-The target device can be specified (e.g. `GPU:0`, `GPU:1`, `CPU:0` etc.). This can be useful if you want to start
-multiple scripts in parallel running on different devices. The value defaults to `GPU:0`. E.g.:
+The target device (e.g. `GPU:0`, `GPU:1`, `CPU:0` etc.) can be specified with `-d` or `--device`. This can be useful
+if you want to start multiple scripts in parallel running on different devices. The value defaults to `GPU:0`. E.g.:
 
 ```
-% ./bin/fit.py -i 1000 -c myfile_gpu3.csv -d GPU:3
+$ ./bin/fit.py -i 1000 -c myfile_gpu3.csv -d GPU:3
+```
+
+The optimizer (`-o`/`--opt-name`), learning rate (`-r`/`--learning-rate`) and additional optimizer parameters
+(`-p`/`--opt-param`) can be supplied. E.g.
+
+```
+$ ./bin/fit.py -o Adam -r 0.01 -p beta1 0.95 -p epsilon 1e-3
+```
+
+Gradient clipping by global norm is disabled by default, but can be enabled with the `-P` or `--grad-clip` arguments.
+E.g.
+
+```
+$ ./bin/fit.py -P 2.5
+```
+
+The fits will be considered converged when the maximum gradient for any coefficient is less than `5e-7`. You can change
+this value with the `-u` or `--grad-max-cutoff` arguments:
+
+```
+$ ./bin/fit.py -u 1e-8
 ```
 
 ## Using Tensorboard
@@ -89,7 +110,6 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 ## Roadmap
 
 * Plot histograms of results (Allow for multiple CSV files).
-* Pass in learning_rate from CLI.
 * Merge `fit.py` and `compare_optimizers.py`?.
 * Add real signal values for a_00_l and a_00_r.
 * Do ensemble runs for different learning rates and compare results.

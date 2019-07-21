@@ -35,6 +35,8 @@ class Optimizer:
         self.trainables = self._remaining = bmfc.trainables(self.fit_coeffs)
         self.signal_events = signal_events
 
+        if not opt_args:
+            opt_args = {}
         opt_args = {'learning_rate': learning_rate, **opt_args}
         if opt_name == 'AMSGrad':
             opt_name = 'Adam'

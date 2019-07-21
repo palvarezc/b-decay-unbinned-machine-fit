@@ -26,7 +26,7 @@ class CsvWriter:
         if os.path.isfile(file_path):
             with open(file_path, 'r', newline='') as previous_csv:
                 rows = csv.DictReader(previous_csv)
-                written_headers = True
+                written_headers = rows.fieldnames
                 for row in rows:
                     self.current_id = int(row['id'])
 

@@ -12,6 +12,12 @@ import sys
 import tensorflow.compat.v2 as tf
 import time
 
+# Force deprecation warnings off to stop them breaking our progress bar(s).
+# The warnings with TF 1.14 are from TF internal code anyway.
+# You should probably comment out if whilst upgrading Tensorflow.
+from tensorflow.python.util import deprecation
+deprecation._PRINT_DEPRECATION_WARNINGS = False
+
 tf.enable_v2_behavior()
 
 

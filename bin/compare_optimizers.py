@@ -4,13 +4,8 @@ Generate metrics for different optimizers and learning rates for comparison in T
 """
 import tensorflow.compat.v2 as tf
 import tqdm
-from tensorflow.python.util import deprecation
 
 import b_meson_fit as bmf
-
-# Force deprecation warnings off to stop them breaking our progress bars. The warnings are from TF internal code anyway.
-# You should probably comment out if whilst upgrading Tensorflow.
-deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 tf.enable_v2_behavior()
 

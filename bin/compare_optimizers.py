@@ -14,11 +14,11 @@ deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 tf.enable_v2_behavior()
 
-# Test name, Optimizer name, Optimizer params, Gradient clip
+# Test name, Optimizer name, Learning rate, Additional optimizer params, Gradient clip
 combos = [
-    ['Adam_0.1_noclip_nocutoff', 'Adam', {'learning_rate': 0.1}, None],
-    ['AmsGrad_0.1_noclip_nocutoff', 'Adam', {'learning_rate': 0.1, 'amsgrad': True}, None],
-    ['AmsGrad_0.2_noclip_nocutoff', 'Adam', {'learning_rate': 0.2, 'amsgrad': True}, None],
+    ['Adam_0.1_noclip_nocutoff', 'Adam', 0.1, {}, None],
+    ['AmsGrad_0.1_noclip_nocutoff', 'AMSGrad', 0.2, {}, None],
+    ['AmsGrad_0.2_noclip_nocutoff', 'AMSGrad', 0.2, {}, None],
 ]
 iterations = 2000
 # Set all default fit coefficients to the same value to make comparison possible
@@ -34,12 +34,13 @@ with bmf.Script() as script:
     log.signal_line(bmf.coeffs.fit(), signal_coeffs, iterations)
 
     for combo in combos:
-        test_name, name, params, clip = combo
+        test_name, name, learning_rate, params, clip = combo
 
         optimizer = bmf.Optimizer(
             bmf.coeffs.fit(),  # Generate new fit coefficients for each run
             signal_events,
             opt_name=name,
+            learning_rate=learning_rate,
             opt_args=params,
             grad_clip=clip,
         )

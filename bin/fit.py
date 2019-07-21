@@ -33,6 +33,13 @@ parser.add_argument(
     help='write results to this CSV file'
 )
 parser.add_argument(
+    '-d',
+    '--device',
+    dest='device',
+    help='use this device e.g. CPU:0, GPU:0, GPU:1 (default: {})'.format(bmf.Script.device_default),
+    default=bmf.Script.device_default,
+)
+parser.add_argument(
     '-i',
     '--iterations',
     dest='iterations',
@@ -66,7 +73,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 iteration = 0
-with bmf.Script() as script:
+with bmf.Script(device=args.device) as script:
     if args.log:
         log = bmf.Log(script.name)
 

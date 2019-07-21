@@ -29,7 +29,7 @@ has been tested on Windows, there aren't any known reasons why it wouldn't run.
 ## Fitting
 
 The script [fit.py](./bin/fit.py) can be used to run a fitting ensemble. The fits will start with random coefficients
-between `-100%` and `+100%` of the signal coefficient values. Run `./bin/fit.py --help` to see all options.
+between `-100%` and `+100%` of the signal coefficient values. Run `./bin/fit.py --help` to see all options and defaults.
 
 You can run it for multiple iterations with either the `-i` or `--iterations` arguments. E.g.:
 
@@ -42,6 +42,13 @@ appending to the same file when it is restarted. E.g.:
 
 ```
 $ ./bin/fit.py -i 1000 -c myfile.csv
+```
+
+The target device can be specified (e.g. `GPU:0`, `GPU:1`, `CPU:0` etc.). This can be useful if you want to start
+multiple scripts in parallel running on different devices. The value defaults to `GPU:0`. E.g.:
+
+```
+% ./bin/fit.py -i 1000 -c myfile_gpu3.csv -d GPU:3
 ```
 
 ## Using Tensorboard

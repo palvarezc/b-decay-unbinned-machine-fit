@@ -30,7 +30,7 @@ class Optimizer:
             opt_name (str): Name of the optimizer to use (e.g. Adam). AMSGrad is a special value that sets the Adam
                 optimizer with the amsgrad=True parameter
             learning_rate (float): Learning rate for optimizer
-            opt_params (dict of str: str): Additional args to pass to optimizer
+            opt_params (dict of str: mixed): Additional args to pass to optimizer
             grad_clip (float): Gradient global norm clipping value. Default only applied if `opt_name` is left
                 as None
             grad_max_cutoff (float): Say we're converged when the max gradient is below this value

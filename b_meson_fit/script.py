@@ -30,23 +30,26 @@ class Script:
         self.name = os.path.basename(os.path.splitext(sys.argv[0])[0])
 
         self.device = device
-        self._device_ctx = tf.device('/device:' + device)
+        if self.device:
+            self._device_ctx = tf.device('/device:' + device)
 
         self._start_times = {}
 
     def __enter__(self):
         """Print on script startup"""
-        stdout('Starting {} on device {}'.format(self.name, self.device))
+        stdout('Starting {}{}'.format(self.name, ' on device {}'.format(self.device) if self.device else ''))
         stdout('')
         self.timer_start('script')
 
-        self._device_ctx.__enter__()
+        if self.device:
+            self._device_ctx.__enter__()
 
         return self
 
     def __exit__(self, *ex_info):
         """Print goodbye and timing on script shutdown"""
-        self._device_ctx.__exit__(*ex_info)
+        if self.device:
+            self._device_ctx.__exit__(*ex_info)
 
         stdout('')
         stdout('Finished {0} in {1:0.1f}s'.format(self.name, self.timer_elapsed('script')))

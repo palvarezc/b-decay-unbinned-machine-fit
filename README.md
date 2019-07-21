@@ -109,12 +109,12 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-* Plot histograms of results (Allow for multiple CSV files).
-* Merge `fit.py` and `compare_optimizers.py`?.
+* Make CSV reading into module/write tests.
+* Cleanup plotter/write docs.
 * Add real signal values for a_00_l and a_00_r.
 * Do ensemble runs for different learning rates and compare results.
 * Tune the optimizer better to improve fitting performance and quality.
 * Add SM coefficients to compare physics models. Compare P values.
-* Get scripts to output plots for scientific publication.
+* Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
 and fitting based on nuisance parameters for those polynomials.

@@ -62,12 +62,8 @@ with bmf.Script(device=None) as script:
     data_points = {}
     for plot in args.plot_list[0]:
         p_name, filename = plot
-        with open(filename, newline='') as csvfile:
-            reader = csv.DictReader(
-                csvfile,
-                fieldnames=(['id', 'normalized_nll'] + bmf.coeffs.names + ['time_taken'])
-            )
-            next(reader, None)  # Skip headers
+        with open(filename, newline='') as csv_file:
+            reader = csv.DictReader(csv_file)
             for row in reader:
                 for c_name in bmf.coeffs.names:
                     if c_name not in data_points:

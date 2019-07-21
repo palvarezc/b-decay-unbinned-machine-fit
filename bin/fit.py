@@ -141,6 +141,9 @@ with bmf.Script(device=args.device) as script:
             total=args.iterations,
             unit='fit'
     ):
+        # Time each iteration for CSV writing
+        script.timer_start('fit')
+
         signal_coeffs = bmf.coeffs.signal()
         signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
 
@@ -180,7 +183,7 @@ with bmf.Script(device=args.device) as script:
                 if optimizer.converged():
                     converged = True
                     if args.csv_file is not None:
-                        writer.write_coeffs(optimizer.normalized_nll, fit_coeffs)
+                        writer.write_coeffs(optimizer.normalized_nll, fit_coeffs, script.timer_elapsed('fit'))
                     break
                 if optimizer.step >= args.max_step:
                     bmf.stderr('No convergence after {} steps. Restarting iteration'.format(args.max_step))

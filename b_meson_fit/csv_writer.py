@@ -32,7 +32,7 @@ class CsvWriter:
 
         # Open the file for writing and write headers if we haven't written before
         self.handle = open(file_path, "a", newline='')
-        self.writer = csv.DictWriter(self.handle, fieldnames=(['id', 'normalized_nll'] + bmfc.names))
+        self.writer = csv.DictWriter(self.handle, fieldnames=(['id', 'normalized_nll'] + bmfc.names + ['time_taken']))
         if not written_headers:
             self.writer.writeheader()
 
@@ -40,15 +40,22 @@ class CsvWriter:
         if self.handle:
             self.handle.close()
 
-    def write_coeffs(self, normalized_nll, coeffs):
+    def write_coeffs(self, normalized_nll, coeffs, time_taken):
         """Write row of coefficients
 
         Args:
+            normalized_nll (tensor): Normalized NLL to write
             coeffs (list of tensors): Coefficient list to write
+            time_taken (float): Seconds this fit took
         """
         self.current_id = self.current_id + 1
         coeff_floats = [c.numpy() for c in coeffs]
-        row = {'id': self.current_id, 'normalized_nll': normalized_nll.numpy(), **dict(zip(bmfc.names, coeff_floats))}
+        row = {
+            'id': self.current_id,
+            'normalized_nll': normalized_nll.numpy(),
+            **dict(zip(bmfc.names, coeff_floats)),
+            'time_taken': time_taken
+        }
         self.writer.writerow(row)
         self.handle.flush()
 

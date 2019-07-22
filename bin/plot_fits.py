@@ -6,6 +6,8 @@ Plot histograms of CSV result files.
 import argparse
 import csv
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy as sp
 import seaborn as sns
 import shutil
 import tensorflow.compat.v2 as tf
@@ -83,15 +85,25 @@ with bmf.Script(device=None) as script:
         for p_idx in range(0, bmf.coeffs.param_count):
             c_idx = a_idx * bmf.coeffs.param_count + p_idx
 
-            bmf.stdout('Processing {} ({})'.format(bmf.coeffs.names[c_idx], c_idx))
-
             drawn_something = False
             for name, points in data_points[bmf.coeffs.names[c_idx]].items():
                 if not all(elem == 0.0 for elem in points):
-                    sns.distplot(points, ax=axes[p_idx], label=name, bins=args.bins, kde=False)
+                    mean = np.mean(points)
+                    std_err = sp.stats.sem(points, axis=None)
+                    bmf.stdout(
+                        '{}/{} signal: {} mean: {} std err: {}'.format(
+                            bmf.coeffs.names[c_idx],
+                            name,
+                            signal_coeffs[c_idx].numpy(),
+                            mean,
+                            std_err
+                        )
+                    )
+                    sns.distplot(points, ax=axes[p_idx], label=name, bins=args.bins, kde=False, norm_hist=True)
                     drawn_something = True
+
             axes[p_idx].set_xlim(-args.plot_scale, args.plot_scale)
-            axes[p_idx].set_ylabel('count')
+            axes[p_idx].set_ylabel('density')
             if drawn_something:
                 axes[p_idx].legend()
                 # Draw a red line to represent the signal

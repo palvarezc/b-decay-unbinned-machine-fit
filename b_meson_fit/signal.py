@@ -228,7 +228,7 @@ def decay_rate_angle_integrated(coeffs, q2):
 
 def decay_rate_frac_s(coeffs, q2):
     """
-    Calculate the S-wave contribution fraction
+    Calculate the S-wave contribution fraction via decay_rate..() functions
 
     Args:
         coeffs: List of scalar coefficient tensors
@@ -243,6 +243,36 @@ def decay_rate_frac_s(coeffs, q2):
     s_wave = _decay_rate_angle_integrated_s_wave(amplitudes)
 
     return s_wave / (p_wave + s_wave)
+
+
+def modulus_frac_s(coeffs, q2):
+    """
+    Calculate the S-wave contribution fraction via squaring the moduli
+
+    Comes from eqn. 8 of arXiv:1504.00574v2
+
+    Args:
+        coeffs: List of scalar coefficient tensors
+        q2: Rank-1 tensor of shape (N) with q^2 values
+
+    Returns:
+        Rank-1 tensor with shape (N)
+    """
+    [a_para_l, a_para_r, a_perp_l, a_perp_r, a_0_l, a_0_r, a_00_l, a_00_r] = _coeffs_to_amplitudes(coeffs, q2)
+    # From eqn. 8 of arXiv:1504.00574v2
+    return (
+             (tf.math.abs(a_00_l) ** 2) * mass_k600_k600 +
+             (tf.math.abs(a_00_r) ** 2) * mass_k600_k600
+     ) / (
+             (tf.math.abs(a_00_l) ** 2) * mass_k600_k600 +
+             (tf.math.abs(a_0_l) ** 2) * mass_K892_K892 +
+             (tf.math.abs(a_para_l) ** 2) * mass_K892_K892 +
+             (tf.math.abs(a_perp_l) ** 2) * mass_K892_K892 +
+             (tf.math.abs(a_00_r) ** 2) * mass_k600_k600 +
+             (tf.math.abs(a_0_r) ** 2) * mass_K892_K892 +
+             (tf.math.abs(a_para_r) ** 2) * mass_K892_K892 +
+             (tf.math.abs(a_perp_r) ** 2) * mass_K892_K892
+     )
 
 
 def _decay_rate_angle_integrated_p_wave(amplitudes, q2):

@@ -10,10 +10,15 @@ import b_meson_fit as bmf
 tf.enable_v2_behavior()
 
 with bmf.Script() as script:
-    q2 = tf.linspace(bmf.signal.q2_min, bmf.signal.q2_max, 100)
-    frac_s = bmf.signal.decay_rate_frac_s(bmf.coeffs.signal(), q2)
+    coeffs = bmf.coeffs.signal()
 
-    plt.plot(q2.numpy(), frac_s.numpy())
+    q2 = tf.linspace(bmf.signal.q2_min, bmf.signal.q2_max, 100)
+    decay_rate_frac_s = bmf.signal.decay_rate_frac_s(coeffs, q2)
+    modulus_frac_s = bmf.signal.modulus_frac_s(coeffs, q2)
+
+    plt.plot(q2.numpy(), decay_rate_frac_s.numpy(), label='decay_rate')
+    plt.plot(q2.numpy(), modulus_frac_s.numpy(), label='modulus')
     plt.xlabel(r'$q^2$')
     plt.ylabel(r'$F_s$')
+    plt.legend()
     plt.show()

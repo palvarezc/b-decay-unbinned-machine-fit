@@ -97,6 +97,14 @@ parser.add_argument(
     help='number of signal events to generated per fit (default: 2400)'
 )
 parser.add_argument(
+    '-S',
+    '--signal-model',
+    dest='signal_model',
+    choices=bmf.coeffs.signal_models,
+    default=bmf.coeffs.SM,
+    help='signal model (default: {})'.format(bmf.coeffs.SM)
+)
+parser.add_argument(
     '-u',
     '--grad-max-cutoff',
     dest='grad_max_cutoff',
@@ -144,7 +152,7 @@ with bmf.Script(device=args.device) as script:
         # Time each iteration for CSV writing
         script.timer_start('fit')
 
-        signal_coeffs = bmf.coeffs.signal()
+        signal_coeffs = bmf.coeffs.signal(args.signal_model)
         signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
 
         # If running if PyCharm, plot our signal distributions for each independent variable
@@ -165,7 +173,7 @@ with bmf.Script(device=args.device) as script:
         attempt = 1
         converged = False
         while not converged:
-            fit_coeffs = bmf.coeffs.fit()
+            fit_coeffs = bmf.coeffs.fit(signal_coeffs)
             optimizer = bmf.Optimizer(
                 fit_coeffs,
                 signal_events,

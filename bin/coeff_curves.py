@@ -33,9 +33,9 @@ def try_nll(pos_, val):
 
 
 with bmf.Script() as script:
-    signal_coeffs = bmf.coeffs.signal()
+    signal_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
     signal_events = bmf.signal.generate(signal_coeffs)
-    fit_coeffs = bmf.coeffs.fit()
+    fit_coeffs = bmf.coeffs.fit(signal_coeffs)
 
     # For each amplitude
     for a_idx in range(0, bmf.coeffs.amplitude_count):
@@ -60,7 +60,7 @@ with bmf.Script() as script:
             bmf.stdout('Processing {} ({})'.format(bmf.coeffs.names[c_idx], c_idx))
 
             # Set all coeffs to the constant signal ones
-            try_coeffs = bmf.coeffs.signal()
+            try_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
 
             c_range = np.linspace(plot_min, plot_max, plot_points, dtype=np.float32)
 

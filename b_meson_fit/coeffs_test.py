@@ -30,23 +30,24 @@ class TestCoeffs(unittest.TestCase):
 
     def test_signal_coeffs(self):
         """Check signal coefficients have correct # of all constants"""
-        signal = bmfc.signal()
+        for name in bmfc.signal_models:
+            signal = bmfc.signal(name)
 
-        self.assertEqual(48, len(signal))
-        for i in range(48):
-            self.assertFalse(bmfc.is_trainable(signal[i]))
+            self.assertEqual(48, len(signal))
+            for i in range(48):
+                self.assertFalse(bmfc.is_trainable(signal[i]))
 
     def test_fit_coeffs(self):
         """Check fit coefficients have correct #, the right ones are trainable,
             and that randomisation/defaults work
         """
-        signal = bmfc.signal()
+        signal = bmfc.signal(bmfc.SM)
 
         for name, default in self.fit_coeff_defaults:
             with self.subTest(name=name):
                 bmfc.fit_default = default
 
-                fit = bmfc.fit()
+                fit = bmfc.fit(signal)
 
                 self.assertEqual(48, len(fit))
                 for i in range(48):

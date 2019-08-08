@@ -7,7 +7,6 @@ import unittest
 import b_meson_fit.coeffs as bmfc
 import b_meson_fit.csv_writer as bmfw
 
-
 tf.enable_v2_behavior()
 
 
@@ -32,9 +31,9 @@ class TestCsv(unittest.TestCase):
         bmfc.fit_default = 12.345
 
         csv_writer = bmfw.CsvWriter(tmp_file)
-        csv_writer.write_coeffs(tf.constant(1.2), bmfc.signal(), 14.8)
+        csv_writer.write_coeffs(tf.constant(1.2), bmfc.signal(bmfc.SM), 14.8)
         csv_writer.write_coeffs(tf.constant(3.4), bmfc.fit(), 15.3)
-        csv_writer.write_coeffs(tf.constant(5.6), bmfc.signal(), 13.9)
+        csv_writer.write_coeffs(tf.constant(5.6), bmfc.signal(bmfc.NP), 13.9)
         self._compare('csv_writer_rows_first_write.csv', tmp_file, 'Non-existent file gets rows written correctly')
 
         csv_writer = bmfw.CsvWriter(tmp_file)
@@ -42,15 +41,18 @@ class TestCsv(unittest.TestCase):
         self._compare('csv_writer_rows_append.csv', tmp_file, 'Existing file gets rows appended correctly')
 
     def _compare(self, expected_filename, actual_filepath, msg):
-        expected_handle = io.open(self._test_data_path(expected_filename))
-        expected = list(expected_handle)
-        expected_handle.close()
+        self.assertListEqual(
+            self._file_contents(self._test_data_path(expected_filename)),
+            self._file_contents(actual_filepath),
+            msg
+        )
 
-        actual_handle = io.open(actual_filepath)
-        actual = list(actual_handle)
-        actual_handle.close()
-
-        self.assertListEqual(expected, actual, msg)
+    @staticmethod
+    def _file_contents(filepath):
+        handle = io.open(filepath)
+        contents = list(handle)
+        handle.close()
+        return contents
 
     @staticmethod
     def _test_data_path(filename):

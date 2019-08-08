@@ -18,8 +18,9 @@ functions = {
 }
 
 with bmf.Script() as script:
-    signal_events = bmf.signal.generate(bmf.coeffs.signal())
-    fit_coeffs = bmf.coeffs.fit()
+    signal_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
+    signal_events = bmf.signal.generate(signal_coeffs)
+    fit_coeffs = bmf.coeffs.fit(signal_coeffs)
     optimizer = bmf.Optimizer(fit_coeffs, signal_events)
 
     for n, f in functions.items():

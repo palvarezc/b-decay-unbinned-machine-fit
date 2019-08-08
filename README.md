@@ -44,6 +44,14 @@ appending to the same file when it is restarted. E.g.:
 $ ./bin/fit.py -i 1000 -c myfile.csv
 ```
 
+The model to use for the signal coefficients can be specified with the `-S` or `--signal-model` options. The
+ default is `SM`. E.g.:
+
+```
+$ ./bin/fit.py -i 1000 -c SM_run.csv -S SM
+$ ./bin/fit.py -i 1000 -c NP_run.csv -S NP
+```
+
 The target device (e.g. `GPU:0`, `GPU:1`, `CPU:0` etc.) can be specified with `-d` or `--device`. This can be useful
 if you want to start multiple scripts in parallel running on different devices. The value defaults to `GPU:0`. E.g.:
 
@@ -109,11 +117,13 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
+* Fix coeff randomization
 * Make CSV reading into module/write tests.
-* Cleanup plotter/write docs.
+* Cleanup plotter/write docs. Lazy importing?
 * Add real signal values for a_00_l and a_00_r.
 * Do ensemble runs for different learning rates and compare results.
 * Tune the optimizer better to improve fitting performance and quality.
+* Add confidence plots (See fig 5 of arXiv:1504.00574)
 * Add SM coefficients to compare physics models. Compare P values.
 * Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,

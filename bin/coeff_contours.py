@@ -36,10 +36,10 @@ def try_nll(c):
 
 
 with bmf.Script():
-    signal_coeffs = bmf.coeffs.signal()
+    signal_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
     signal_events = bmf.signal.generate(signal_coeffs)
     # Set fit coeffs to our constant signal ones
-    fit_coeffs = bmf.coeffs.signal()
+    fit_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
 
     cx = np.linspace(grid_min, grid_max, grid_points, dtype=np.float32)
     cy = np.linspace(grid_min, grid_max, grid_points, dtype=np.float32)

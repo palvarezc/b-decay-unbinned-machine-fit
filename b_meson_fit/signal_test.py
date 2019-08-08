@@ -18,7 +18,7 @@ class TestSignal(unittest.TestCase):
     #  2. Run the test_data/signal_integrator.py file to get the "true" values
     #  3. Set the found decay rate in your new line
     test_coeffs = [
-        ('signal', bmfc.signal(), 487.20193,),
+        ('signal', bmfc.signal(bmfc.NP), 487.20193,),
         ('ones', [tf.constant(1.0)] * bmfc.count, 2687.5159,),
         ('integers', [tf.constant(float(i)) for i in range(int(-bmfc.count / 2), int(bmfc.count / 2))], 436425.156,),
         ('minus_point_ones', [tf.constant(-0.1)] * bmfc.count, 26.875162,),
@@ -57,7 +57,7 @@ class TestSignal(unittest.TestCase):
 
     def test_generate_returns_correct_shape(self):
         """Check generate() returns a tensor of shape (events_total, 4)"""
-        events = bmfs.generate(bmfc.signal(), 123_456)
+        events = bmfs.generate(bmfc.signal(bmfc.SM), 123_456)
         self.longMessage = True
         self.assertEqual(123_456, tf.shape(events)[0].numpy())
         self.assertEqual(4, tf.shape(events)[1].numpy())

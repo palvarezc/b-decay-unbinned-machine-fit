@@ -20,7 +20,7 @@ iterations = 2000
 bmf.coeffs.fit_default = 1.0
 
 with bmf.Script() as script:
-    signal_coeffs = bmf.coeffs.signal()
+    signal_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
     signal_events = bmf.signal.generate(signal_coeffs)
 
     log = bmf.Log(script.name)

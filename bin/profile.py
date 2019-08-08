@@ -17,13 +17,12 @@ with bmf.Script() as script:
             'sudo -E --preserve-env=PYTHONPATH ./bin/profile.py')
         exit(1)
 
-    signal_coeffs = bmf.coeffs.signal()
-    signal_events = bmf.signal.generate(signal_coeffs)
     log = bmf.Log(script.name)
 
+    signal_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
     optimizer = bmf.Optimizer(
-        bmf.coeffs.fit(),
-        signal_events,
+        bmf.coeffs.fit(signal_coeffs),
+        bmf.signal.generate(signal_coeffs),
     )
 
     for i in range(1000):

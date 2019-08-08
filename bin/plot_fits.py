@@ -74,7 +74,7 @@ with bmf.Script(device=None) as script:
                         data_points[c_name][p_name] = []
                     data_points[c_name][p_name].append(float(row[c_name]))
 
-    signal_coeffs = bmf.coeffs.signal()
+    signal_coeffs = bmf.coeffs.signal(bmf.coeffs.NP)
 
     # For each amplitude
     for a_idx in range(0, bmf.coeffs.amplitude_count):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Helper script to generate test decay rate values for signal_test.py.
+Helper script to generate test decay rate values for test_signal.py.
 
 Go through our test_coeffs data provider and use odeint_fixed () to across all variables to work out a
 decay rate.
@@ -18,7 +18,7 @@ from tensorflow.contrib import integrate as tf_integrate
 
 import b_meson_fit.script as bmfr
 import b_meson_fit.signal as bmfs
-import b_meson_fit.signal_test as bmfst
+import b_meson_fit.test_signal as bmft
 
 tf.enable_v2_behavior()
 
@@ -40,7 +40,7 @@ decay_rate = tf.function(bmfs.decay_rate)
 
 with bmfr.Script() as script:
     # Check for different lists of coefficients
-    for c_name, coeffs, expected_decay_rate in bmfst.TestSignal.test_coeffs:
+    for c_name, coeffs, expected_decay_rate in bmft.TestSignal.test_coeffs:
         bmfr.stdout('Integrating {}'.format(c_name))
 
         # Integrate decay_rate() over the 4 independent variables

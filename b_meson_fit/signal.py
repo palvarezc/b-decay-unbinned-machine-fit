@@ -1,8 +1,10 @@
 """Contains signal probability functions"""
 import math
-import numpy as np
 import tensorflow.compat.v2 as tf
 import tensorflow_probability as tfp
+
+import b_meson_fit.breit_wigner as bmfbw
+import b_meson_fit.integrate as bmfi
 
 tf.enable_v2_behavior()
 
@@ -10,13 +12,13 @@ q2_min = tf.constant(1.0)  # 1 (GeV/c^2)^2
 q2_max = tf.constant(8.0)  # 8 (GeV/c^2)^2
 mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
 
-# Mass modification terms. See section 3.5 of arXiv:1504.00574v2
-mass_K892_K892 = tf.constant(0.80)
-mass_k600_k600 = tf.constant(0.18)
-mass_k600_K892 = tf.constant(0.22 - 0.23j, dtype=tf.complex64)
+# Step size to use for integrating decay rate
+integration_dt = tf.constant(0.0025)
 
-# Step size to use for integrating
-integration_dt = 0.0025
+# Integrated BW distributions to apply to amplitudes
+bw_k700 = bmfbw.k700_distribution_integrated()
+bw_k892 = bmfbw.k892_distribution_integrated()
+bw_k700_k892 = bmfbw.k700_k892_distribution_integrated()
 
 
 def nll(coeffs, events):
@@ -259,19 +261,20 @@ def modulus_frac_s(coeffs, q2):
         Rank-1 tensor with shape (N)
     """
     [a_para_l, a_para_r, a_perp_l, a_perp_r, a_0_l, a_0_r, a_00_l, a_00_r] = _coeffs_to_amplitudes(coeffs, q2)
+
     # From eqn. 8 of arXiv:1504.00574v2
     return (
-             (tf.math.abs(a_00_l) ** 2) * mass_k600_k600 +
-             (tf.math.abs(a_00_r) ** 2) * mass_k600_k600
+             (tf.math.abs(a_00_l) ** 2) * bw_k700 +
+             (tf.math.abs(a_00_r) ** 2) * bw_k700
      ) / (
-             (tf.math.abs(a_00_l) ** 2) * mass_k600_k600 +
-             (tf.math.abs(a_0_l) ** 2) * mass_K892_K892 +
-             (tf.math.abs(a_para_l) ** 2) * mass_K892_K892 +
-             (tf.math.abs(a_perp_l) ** 2) * mass_K892_K892 +
-             (tf.math.abs(a_00_r) ** 2) * mass_k600_k600 +
-             (tf.math.abs(a_0_r) ** 2) * mass_K892_K892 +
-             (tf.math.abs(a_para_r) ** 2) * mass_K892_K892 +
-             (tf.math.abs(a_perp_r) ** 2) * mass_K892_K892
+             (tf.math.abs(a_00_l) ** 2) * bw_k700 +
+             (tf.math.abs(a_0_l) ** 2) * bw_k892 +
+             (tf.math.abs(a_para_l) ** 2) * bw_k892 +
+             (tf.math.abs(a_perp_l) ** 2) * bw_k892 +
+             (tf.math.abs(a_00_r) ** 2) * bw_k700 +
+             (tf.math.abs(a_0_r) ** 2) * bw_k892 +
+             (tf.math.abs(a_para_r) ** 2) * bw_k892 +
+             (tf.math.abs(a_perp_r) ** 2) * bw_k892
      )
 
 
@@ -329,7 +332,7 @@ def _j1s(amplitudes, beta2_mu, four_mass2_over_q2):
             (a_perp_l * tf.math.conj(a_perp_r)) +
             (a_para_l * tf.math.conj(a_para_r))
         )
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j1c(amplitudes, four_mass2_over_q2):
@@ -339,7 +342,7 @@ def _j1c(amplitudes, four_mass2_over_q2):
         (tf.math.abs(a_0_l) ** 2) +
         (tf.math.abs(a_0_r) ** 2) +
         (four_mass2_over_q2 * 2 * tf.math.real(a_0_l * tf.math.conj(a_0_r)))
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j2s(amplitudes, beta2_mu):
@@ -350,7 +353,7 @@ def _j2s(amplitudes, beta2_mu):
         (tf.math.abs(a_para_l) ** 2) +
         (tf.math.abs(a_perp_r) ** 2) +
         (tf.math.abs(a_para_r) ** 2)
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j2c(amplitudes, beta2_mu):
@@ -359,7 +362,7 @@ def _j2c(amplitudes, beta2_mu):
     return (- beta2_mu) * (
         (tf.math.abs(a_0_l) ** 2) +
         (tf.math.abs(a_0_r) ** 2)
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j3(amplitudes, beta2_mu):
@@ -370,7 +373,7 @@ def _j3(amplitudes, beta2_mu):
         (tf.math.abs(a_para_l) ** 2) +
         (tf.math.abs(a_perp_r) ** 2) -
         (tf.math.abs(a_para_r) ** 2)
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j4(amplitudes, beta2_mu):
@@ -379,7 +382,7 @@ def _j4(amplitudes, beta2_mu):
     return (beta2_mu / tf.sqrt(2.0)) * (
         tf.math.real(a_0_l * tf.math.conj(a_para_l)) +
         tf.math.real(a_0_r * tf.math.conj(a_para_r))
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j5(amplitudes, beta_mu):
@@ -388,7 +391,7 @@ def _j5(amplitudes, beta_mu):
     return tf.sqrt(2.0) * beta_mu * (
         tf.math.real(a_0_l * tf.math.conj(a_perp_l)) -
         tf.math.real(a_0_r * tf.math.conj(a_perp_r))
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j6s(amplitudes, beta_mu):
@@ -397,7 +400,7 @@ def _j6s(amplitudes, beta_mu):
     return 2.0 * beta_mu * (
         tf.math.real(a_para_l * tf.math.conj(a_perp_l)) -
         tf.math.real(a_para_r * tf.math.conj(a_perp_r))
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j7(amplitudes, beta_mu):
@@ -406,7 +409,7 @@ def _j7(amplitudes, beta_mu):
     return tf.sqrt(2.0) * beta_mu * (
         tf.math.imag(a_0_l * tf.math.conj(a_para_l)) -
         tf.math.imag(a_0_r * tf.math.conj(a_para_r))
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j8(amplitudes, beta2_mu):
@@ -415,7 +418,7 @@ def _j8(amplitudes, beta2_mu):
     return (beta2_mu / tf.sqrt(2.0)) * (
         tf.math.imag(a_0_l * tf.math.conj(a_perp_l)) +
         tf.math.imag(a_0_r * tf.math.conj(a_perp_r))
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j9(amplitudes, beta2_mu):
@@ -424,7 +427,7 @@ def _j9(amplitudes, beta2_mu):
     return beta2_mu * (
         tf.math.imag(tf.math.conj(a_para_l) * a_perp_l) +
         tf.math.imag(tf.math.conj(a_para_r) * a_perp_r)
-    ) * mass_K892_K892
+    ) * bw_k892
 
 
 def _j1c_prime(amplitudes):
@@ -433,15 +436,15 @@ def _j1c_prime(amplitudes):
     return (1 / 3) * (
         (tf.math.abs(a_00_l) ** 2) +
         (tf.math.abs(a_00_r) ** 2)
-    ) * mass_k600_k600
+    ) * bw_k700
 
 
 def _j1c_dblprime(amplitudes):
     """Calculate j''1c angular observable"""
     [_, _, _, _, a_0_l, a_0_r, a_00_l, a_00_r] = amplitudes
     return (2 / tf.sqrt(3.0)) * (
-        tf.math.real(a_00_l * tf.math.conj(a_0_l) * mass_k600_K892) +
-        tf.math.real(a_00_r * tf.math.conj(a_0_r) * mass_k600_K892)
+        tf.math.real(a_00_l * tf.math.conj(a_0_l) * bw_k700_k892) +
+        tf.math.real(a_00_r * tf.math.conj(a_0_r) * bw_k700_k892)
     )
 
 
@@ -449,8 +452,8 @@ def _j4_prime(amplitudes):
     """Calculate j'4 angular observable"""
     [a_para_l, a_para_r, _, _, _, _, a_00_l, a_00_r] = amplitudes
     return tf.sqrt(2.0 / 3.0) * (
-        tf.math.real(a_00_l * tf.math.conj(a_para_l) * mass_k600_K892) +
-        tf.math.real(a_00_r * tf.math.conj(a_para_r) * mass_k600_K892)
+        tf.math.real(a_00_l * tf.math.conj(a_para_l) * bw_k700_k892) +
+        tf.math.real(a_00_r * tf.math.conj(a_para_r) * bw_k700_k892)
     )
 
 
@@ -458,8 +461,8 @@ def _j5_prime(amplitudes):
     """Calculate j'5 angular observable"""
     [_, _, a_perp_l, a_perp_r, _, _, a_00_l, a_00_r] = amplitudes
     return 2 * tf.sqrt(2.0 / 3.0) * (
-        tf.math.real(a_00_l * tf.math.conj(a_perp_l) * mass_k600_K892) -
-        tf.math.real(a_00_r * tf.math.conj(a_perp_r) * mass_k600_K892)
+        tf.math.real(a_00_l * tf.math.conj(a_perp_l) * bw_k700_k892) -
+        tf.math.real(a_00_r * tf.math.conj(a_perp_r) * bw_k700_k892)
     )
 
 
@@ -467,8 +470,8 @@ def _j7_prime(amplitudes):
     """Calculate j'7 angular observable"""
     [a_para_l, a_para_r, _, _, _, _, a_00_l, a_00_r] = amplitudes
     return 2 * tf.sqrt(2.0 / 3.0) * (
-        tf.math.imag(a_00_l * tf.math.conj(a_para_l) * mass_k600_K892) -
-        tf.math.imag(a_00_r * tf.math.conj(a_para_r) * mass_k600_K892)
+        tf.math.imag(a_00_l * tf.math.conj(a_para_l) * bw_k700_k892) -
+        tf.math.imag(a_00_r * tf.math.conj(a_para_r) * bw_k700_k892)
     )
 
 
@@ -476,33 +479,21 @@ def _j8_prime(amplitudes):
     """Calculate j'8 angular observable"""
     [_, _, a_perp_l, a_perp_r, _, _, a_00_l, a_00_r] = amplitudes
     return tf.sqrt(2.0 / 3.0) * (
-        tf.math.imag(a_00_l * tf.math.conj(a_perp_l) * mass_k600_K892) +
-        tf.math.imag(a_00_r * tf.math.conj(a_perp_r) * mass_k600_K892)
+        tf.math.imag(a_00_l * tf.math.conj(a_perp_l) * bw_k700_k892) +
+        tf.math.imag(a_00_r * tf.math.conj(a_perp_r) * bw_k700_k892)
     )
 
 
 def _integrate_decay_rate(coeffs):
     """
     Integrate previously angle integrated decay rate function over q^2 for particular amplitude coefficients
-
-    Uses trapezoid rule as Tensorflow's odeint() is much slower
     """
-    # Generate q^2 points to integrate
-    q2 = tf.constant(np.arange(q2_min.numpy(), q2_max.numpy(), integration_dt), dtype=tf.float32)
-
-    # Get tensor of decay_rates for our q^2 points
-    decay_rates = decay_rate_angle_integrated(coeffs, q2)
-
-    # Make tensors of the start and end decay rates values for our trapezoids
-    # So if decay_rates=[10.0, 25.0, 45.0, 20.0]
-    start_rates = decay_rates[:-1]  # ... [10.0, 25.0, 45.0]
-    end_rates = decay_rates[1:]     # ... [25.0, 45.0, 20.0]
-
-    # Make a tensor of our trapezoid areas
-    trapezoids = (tf.math.add(start_rates, end_rates) / 2.0) * integration_dt
-
-    # Add the trapezoids together
-    return tf.reduce_sum(trapezoids)
+    return bmfi.trapezoid(
+        lambda q2: decay_rate_angle_integrated(coeffs, q2),
+        q2_min,
+        q2_max,
+        integration_dt
+    )
 
 
 def _coeffs_to_amplitudes(coeffs, q2):

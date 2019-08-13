@@ -117,14 +117,25 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-* Fix coeff randomization
+* Get checked (regards to relativistic mass) coeffs from Mark
+* Lazy importing for BW?
+* Add script to plot amplitudes/observables
+* Change coefficient randomization to -/+ 2x and show discrete symmetries exist
 * Make CSV reading into module/write tests.
-* Cleanup plotter/write docs. Lazy importing?
+* Cleanup plotter/add NP vs SM/write docs
 * Add real signal values for a_00_l and a_00_r.
-* Do ensemble runs for different learning rates and compare results.
-* Tune the optimizer better to improve fitting performance and quality.
+* Compare SM vs NP (Use same largest range) for std err/pulls. Compare P values.
+* Compare different optimizer learning rates for speed/std err/pulls
+* Compare different optimizer momentum for speed/std err/pulls
+* Use pulls to find out what params are biased
+* Plot C9 vs C10. Do we trust uncertainties?
+* How do errors propagate from uncertainty in mass terms?
 * Add confidence plots (See fig 5 of arXiv:1504.00574)
-* Add SM coefficients to compare physics models. Compare P values.
+* Show pulls when starting coefficients at generated values
+* Bullet main ideas for report (do more reading/check notes)
+
 * Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
+* Write documentation of why AMSGrad works over Adam
+* Tune the optimizer better to improve fitting performance and quality.
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
 and fitting based on nuisance parameters for those polynomials.

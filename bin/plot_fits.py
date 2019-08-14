@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """
-Plot histograms of CSV result files.
+Plot coefficient value and pull histograms for given CSV result files.
+
+Will also output mean, std err and pull mean for each coefficient.
 """
 
 import argparse
@@ -20,10 +22,15 @@ tf.enable_v2_behavior()
 
 def name_and_filename(arg):
     try:
-        _name, _filename = arg.split(":")
+        _name, _signal_model, _filename = arg.split(":")
     except ValueError:
-        raise argparse.ArgumentError(None, "Plot list must be specified as NAME:FILENAME")
-    return _name, _filename
+        raise argparse.ArgumentError(None, "Plot list must be specified as NAME:SIGNAL_MODEL:FILENAME")
+    if _signal_model not in bmf.coeffs.signal_models:
+        raise argparse.ArgumentError(
+            None,
+            "Signal model {} must be one of {}".format(_signal_model, ','.join(bmf.coeffs.signal_models))
+        )
+    return _name, _signal_model, _filename
 
 
 columns = shutil.get_terminal_size().columns
@@ -52,17 +59,20 @@ parser.add_argument(
     dest='plot_list',
     action='append',
     type=name_and_filename,
-    metavar='NAME:FILENAME',
-    help='Name and filename pairs to plot'
+    metavar='NAME:SIGNAL_MODEL:FILENAME',
+    help='Name, signal model and filename to plot (e.g. NP_0.15:NP:NP_0.15.csv)'
 )
 
 args = parser.parse_args()
 print(args)
 
 with bmf.Script(device=None) as script:
+    # Load inputs
     data_points = {}
+    signal_coeffs = {}
     for plot in args.plot_list[0]:
-        p_name, filename = plot
+        p_name, signal_model, filename = plot
+        signal_coeffs[p_name] = bmf.coeffs.signal(signal_model)
         with open(filename, newline='') as csv_file:
             reader = csv.DictReader(csv_file)
             for row in reader:
@@ -72,8 +82,6 @@ with bmf.Script(device=None) as script:
                     if p_name not in data_points[c_name]:
                         data_points[c_name][p_name] = []
                     data_points[c_name][p_name].append(float(row[c_name]))
-
-    signal_coeffs = bmf.coeffs.signal(bmf.coeffs.NP)
 
     # For each amplitude
     for a_idx in range(0, bmf.coeffs.amplitude_count):
@@ -90,20 +98,22 @@ with bmf.Script(device=None) as script:
                 if not all(elem == 0.0 for elem in points):
                     mean = np.mean(points)
                     std_err = sp.stats.sem(points, axis=None)
-                    pull = list(map(lambda p: (p - signal_coeffs[c_idx].numpy()) / std_err, points))
+                    pull = list(map(lambda p: (p - signal_coeffs[name][c_idx].numpy()) / std_err, points))
                     pull_mean = np.mean(points)
 
                     bmf.stdout(
                         '{}/{} signal: {} mean: {} std err: {} pull mean: {}'.format(
                             bmf.coeffs.names[c_idx],
                             name,
-                            signal_coeffs[c_idx].numpy(),
+                            signal_coeffs[name][c_idx].numpy(),
                             mean,
                             std_err,
                             pull_mean,
                         )
                     )
                     color = next(colors)
+                    color_darker = tuple(map(lambda c: c * 0.5, color))
+
                     # Fit distribution
                     sns.distplot(
                         points,
@@ -114,6 +124,11 @@ with bmf.Script(device=None) as script:
                         norm_hist=True,
                         color=color
                     )
+                    # Draw a darker solid line to represent the signal
+                    axes[p_idx * 2].axvline(signal_coeffs[name][c_idx].numpy(), ymax=0.25, color=color_darker)
+                    # Draw a darker dotted line to represent the mean
+                    axes[p_idx * 2].axvline(mean, ymax=0.25, color=color_darker, linestyle=':')
+
                     # Fit pull
                     sns.distplot(
                         pull,
@@ -124,8 +139,7 @@ with bmf.Script(device=None) as script:
                         norm_hist=True,
                         color=color
                     )
-                    # Draw a darker line to represent the pull mean
-                    color_darker = tuple(map(lambda c: c * 0.5, color))
+                    # Draw a darker solid line to represent the pull mean
                     axes[p_idx * 2 + 1].axvline(np.mean(pull), ymax=0.25, color=color_darker)
 
                     drawn_something = True
@@ -135,9 +149,5 @@ with bmf.Script(device=None) as script:
             if drawn_something:
                 axes[p_idx * 2].legend()
                 axes[p_idx * 2 + 1].legend()
-                # Draw a red line to represent the signal
-                axes[p_idx * 2].axvline(signal_coeffs[c_idx].numpy(), ymax=0.25, color='r')
-                # Draw a black line to represent the mean
-                axes[p_idx * 2].axvline(mean, ymax=0.5, color='black')
 
         plt.show()

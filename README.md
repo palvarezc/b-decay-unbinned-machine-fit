@@ -119,9 +119,8 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 * Get checked (regards to relativistic mass) coeffs from Mark
 * Lazy importing for BW?
-* Add script to plot amplitudes/observables/diff decay rate
 * Make CSV reading into module/write tests.
-* Cleanup plotter/add NP vs SM/write docs
+* Cleanup plotter/write docs
 
 * Change coefficient randomization to -/+ 2x and show discrete symmetries exist
 * Compare SM vs NP (Use same largest range) for std err/pulls. Compare P values.

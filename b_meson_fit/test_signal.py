@@ -34,7 +34,7 @@ class TestSignal(unittest.TestCase):
         # Check for different lists of coefficients
         for c_name, coeffs, expected_decay_rate in self.test_coeffs:
             with self.subTest(c_name=c_name):
-                actual = bmfs._integrate_decay_rate(coeffs)
+                actual = bmfs.integrate_decay_rate(coeffs)
                 # Check values are the same to within 0.1%
                 nt.assert_allclose(expected_decay_rate, actual.numpy(), atol=0, rtol=0.01)
 
@@ -51,7 +51,7 @@ class TestSignal(unittest.TestCase):
                     tf.stack([bmfs.q2_min, bmfs.q2_max]),
                 )[1]
 
-                ours = bmfs._integrate_decay_rate(coeffs)
+                ours = bmfs.integrate_decay_rate(coeffs)
 
                 nt.assert_allclose(true.numpy(), ours.numpy(), atol=0, rtol=0.001)
 

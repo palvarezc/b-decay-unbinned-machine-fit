@@ -70,7 +70,7 @@ def generate(coeffs, events_total=100_000, batch_size=10_000_000):
     events_found = 0
 
     # Find the integrated decay rate so we can normalise our decay rates to probabilities
-    norm = _integrate_decay_rate(coeffs)
+    norm = integrate_decay_rate(coeffs)
 
     # Distributions for our independent variables
     q2_dist = tfp.distributions.Uniform(low=q2_min, high=q2_max)
@@ -124,7 +124,7 @@ def pdf(coeffs, events):
         Rank-1 tensor with shape (N)
     """
     decay_rates = decay_rate(coeffs, events)
-    norm = _integrate_decay_rate(coeffs)
+    norm = integrate_decay_rate(coeffs)
     # We don't want -ve probabilities, however 0 causes inf problems so floor at 1e-30
     return tf.math.maximum(decay_rates / norm, 1e-30)
 
@@ -141,7 +141,7 @@ def decay_rate(coeffs, events):
         Rank-1 tensor with shape (N)
     """
     [q2, cos_theta_k, cos_theta_l, phi] = tf.unstack(events, axis=1)
-    amplitudes = _coeffs_to_amplitudes(coeffs, q2)
+    amplitudes = coeffs_to_amplitudes(coeffs, q2)
 
     # Angles
     cos2_theta_k = cos_theta_k ** 2
@@ -161,52 +161,52 @@ def decay_rate(coeffs, events):
     sin_2phi = tf.math.sin(2.0 * phi)
 
     # Mass terms
-    four_mass2_over_q2 = _four_mass2_over_q2(q2)
-    beta2 = _beta2(four_mass2_over_q2)
-    beta = tf.sqrt(beta2)
+    four_mass2_over_q2_ = four_mass2_over_q2(q2)
+    beta2_mu_ = beta2_mu(four_mass2_over_q2_)
+    beta_mu = tf.sqrt(beta2_mu_)
 
     # P-wave observables
-    j1s = _j1s(amplitudes, beta2, four_mass2_over_q2)
-    j1c = _j1c(amplitudes, four_mass2_over_q2)
-    j2s = _j2s(amplitudes, beta2)
-    j2c = _j2c(amplitudes, beta2)
-    j3 = _j3(amplitudes, beta2)
-    j4 = _j4(amplitudes, beta2)
-    j5 = _j5(amplitudes, beta)
-    j6s = _j6s(amplitudes, beta)
-    j7 = _j7(amplitudes, beta)
-    j8 = _j8(amplitudes, beta2)
-    j9 = _j9(amplitudes, beta2)
+    j1s_ = j1s(amplitudes, beta2_mu_, four_mass2_over_q2_)
+    j1c_ = j1c(amplitudes, four_mass2_over_q2_)
+    j2s_ = j2s(amplitudes, beta2_mu_)
+    j2c_ = j2c(amplitudes, beta2_mu_)
+    j3_ = j3(amplitudes, beta2_mu_)
+    j4_ = j4(amplitudes, beta2_mu_)
+    j5_ = j5(amplitudes, beta_mu)
+    j6s_ = j6s(amplitudes, beta_mu)
+    j7_ = j7(amplitudes, beta_mu)
+    j8_ = j8(amplitudes, beta2_mu_)
+    j9_ = j9(amplitudes, beta2_mu_)
 
     p_wave = (9 / (32 * math.pi)) * (
-        (j1s * sin2_theta_k) +
-        (j1c * cos2_theta_k) +
-        (j2s * sin2_theta_k * cos_2theta_l) +
-        (j2c * cos2_theta_k * cos_2theta_l) +
-        (j3 * sin2_theta_k * sin2_theta_l * cos_2phi) +
-        (j4 * sin_2theta_k * sin_2theta_l * cos_phi) +
-        (j5 * sin_2theta_k * sin_theta_l * cos_phi) +
-        (j6s * sin2_theta_k * cos_theta_l) +
-        (j7 * sin_2theta_k * sin_theta_l * sin_phi) +
-        (j8 * sin_2theta_k * sin_2theta_l * sin_phi) +
-        (j9 * sin2_theta_k * sin2_theta_l * sin_2phi)
+        (j1s_ * sin2_theta_k) +
+        (j1c_ * cos2_theta_k) +
+        (j2s_ * sin2_theta_k * cos_2theta_l) +
+        (j2c_ * cos2_theta_k * cos_2theta_l) +
+        (j3_ * sin2_theta_k * sin2_theta_l * cos_2phi) +
+        (j4_ * sin_2theta_k * sin_2theta_l * cos_phi) +
+        (j5_ * sin_2theta_k * sin_theta_l * cos_phi) +
+        (j6s_ * sin2_theta_k * cos_theta_l) +
+        (j7_ * sin_2theta_k * sin_theta_l * sin_phi) +
+        (j8_ * sin_2theta_k * sin_2theta_l * sin_phi) +
+        (j9_ * sin2_theta_k * sin2_theta_l * sin_2phi)
     )
 
     # S-wave observables
-    j1c_prime = _j1c_prime(amplitudes)
-    j1c_dblprime = _j1c_dblprime(amplitudes)
-    j4_prime = _j4_prime(amplitudes)
-    j5_prime = _j5_prime(amplitudes)
-    j7_prime = _j7_prime(amplitudes)
-    j8_prime = _j8_prime(amplitudes)
+    j1c_prime_ = j1c_prime(amplitudes)
+    j1c_dblprime_ = j1c_dblprime(amplitudes)
+    j4_prime_ = j4_prime(amplitudes)
+    j5_prime_ = j5_prime(amplitudes)
+    j7_prime_ = j7_prime(amplitudes)
+    j8_prime_ = j8_prime(amplitudes)
 
     s_wave = (9 / (32 * math.pi)) * (
-        (j1c_prime * (1 - cos_2theta_l)) +
-        (j1c_dblprime * cos_theta_k * (1 - cos_2theta_l)) +
-        (j4_prime * sin_2theta_l * sin_theta_k * cos_phi) +
-        (j5_prime * sin_theta_l * sin_theta_k * cos_phi) +
-        (j7_prime * sin_theta_l * sin_theta_k * sin_phi) +
-        (j8_prime * sin_2theta_l * sin_theta_k * sin_phi)
+        (j1c_prime_ * (1 - cos_2theta_l)) +
+        (j1c_dblprime_ * cos_theta_k * (1 - cos_2theta_l)) +
+        (j4_prime_ * sin_2theta_l * sin_theta_k * cos_phi) +
+        (j5_prime_ * sin_theta_l * sin_theta_k * cos_phi) +
+        (j7_prime_ * sin_theta_l * sin_theta_k * sin_phi) +
+        (j8_prime_ * sin_2theta_l * sin_theta_k * sin_phi)
     )
 
     return p_wave + s_wave
@@ -223,9 +223,9 @@ def decay_rate_angle_integrated(coeffs, q2):
     Returns:
         Rank-1 tensor with shape (N)
     """
-    amplitudes = _coeffs_to_amplitudes(coeffs, q2)
+    amplitudes = coeffs_to_amplitudes(coeffs, q2)
 
-    return _decay_rate_angle_integrated_p_wave(amplitudes, q2) + _decay_rate_angle_integrated_s_wave(amplitudes)
+    return decay_rate_angle_integrated_p_wave(amplitudes, q2) + decay_rate_angle_integrated_s_wave(amplitudes)
 
 
 def decay_rate_frac_s(coeffs, q2):
@@ -239,10 +239,10 @@ def decay_rate_frac_s(coeffs, q2):
     Returns:
         Rank-1 tensor with shape (N)
     """
-    amplitudes = _coeffs_to_amplitudes(coeffs, q2)
+    amplitudes = coeffs_to_amplitudes(coeffs, q2)
 
-    p_wave = _decay_rate_angle_integrated_p_wave(amplitudes, q2)
-    s_wave = _decay_rate_angle_integrated_s_wave(amplitudes)
+    p_wave = decay_rate_angle_integrated_p_wave(amplitudes, q2)
+    s_wave = decay_rate_angle_integrated_s_wave(amplitudes)
 
     return s_wave / (p_wave + s_wave)
 
@@ -260,7 +260,7 @@ def modulus_frac_s(coeffs, q2):
     Returns:
         Rank-1 tensor with shape (N)
     """
-    [a_para_l, a_para_r, a_perp_l, a_perp_r, a_0_l, a_0_r, a_00_l, a_00_r] = _coeffs_to_amplitudes(coeffs, q2)
+    [a_para_l, a_para_r, a_perp_l, a_perp_r, a_0_l, a_0_r, a_00_l, a_00_r] = coeffs_to_amplitudes(coeffs, q2)
 
     # From eqn. 8 of arXiv:1504.00574v2
     return (
@@ -278,77 +278,77 @@ def modulus_frac_s(coeffs, q2):
      )
 
 
-def _decay_rate_angle_integrated_p_wave(amplitudes, q2):
+def decay_rate_angle_integrated_p_wave(amplitudes, q2):
     """
     Calculate the P-wave contribution to the angle-integrated decay rate for given q^2 values and amplitudes
 
     Formula can be found in the Mathematica file "decay_rate.nb" and the paper arXiv:1202.4266
     """
     # Mass terms
-    four_mass2_over_q2 = _four_mass2_over_q2(q2)
-    beta2 = _beta2(four_mass2_over_q2)
+    four_mass2_over_q2_ = four_mass2_over_q2(q2)
+    beta2_mu_ = beta2_mu(four_mass2_over_q2_)
 
     # Observables
-    j1s = _j1s(amplitudes, beta2, four_mass2_over_q2)
-    j1c = _j1c(amplitudes, four_mass2_over_q2)
-    j2s = _j2s(amplitudes, beta2)
-    j2c = _j2c(amplitudes, beta2)
+    j1s_ = j1s(amplitudes, beta2_mu_, four_mass2_over_q2_)
+    j1c_ = j1c(amplitudes, four_mass2_over_q2_)
+    j2s_ = j2s(amplitudes, beta2_mu_)
+    j2c_ = j2c(amplitudes, beta2_mu_)
 
-    return (1 / 4) * ((6 * j1s) + (3 * j1c) - (2 * j2s) - j2c)
+    return (1 / 4) * ((6 * j1s_) + (3 * j1c_) - (2 * j2s_) - j2c_)
 
 
-def _decay_rate_angle_integrated_s_wave(amplitudes):
+def decay_rate_angle_integrated_s_wave(amplitudes):
     """
     Calculate the S-wave contribution to the angle-integrated decay rate for given q^2 values and amplitudes
 
     Formula can be found in the Mathematica file "decay_rate.nb"
     """
     # Observables
-    j1c_prime = _j1c_prime(amplitudes)
+    j1c_prime_ = j1c_prime(amplitudes)
 
-    return 3 * j1c_prime
+    return 3 * j1c_prime_
 
 
-def _four_mass2_over_q2(q2):
+def four_mass2_over_q2(q2):
     """Calculate 4*m_μ^2/q^2"""
     return (4.0 * (mass_mu ** 2)) / q2
 
 
-def _beta2(four_mass2_over_q2):
+def beta2_mu(four_mass2_over_q2_):
     """Calculate β_μ^2"""
-    return 1.0 - four_mass2_over_q2
+    return 1.0 - four_mass2_over_q2_
 
 
-def _j1s(amplitudes, beta2_mu, four_mass2_over_q2):
+def j1s(amplitudes, beta2_mu_, four_mass2_over_q2_):
     """Calculate j1s angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _, _, _] = amplitudes
     return (
-        ((2.0 + beta2_mu) / 4.0) * (
+        ((2.0 + beta2_mu_) / 4.0) * (
             (tf.math.abs(a_perp_l) ** 2) +
             (tf.math.abs(a_para_l) ** 2) +
             (tf.math.abs(a_perp_r) ** 2) +
             (tf.math.abs(a_para_r) ** 2)
-        ) + four_mass2_over_q2 * tf.math.real(
+        ) + four_mass2_over_q2_ * tf.math.real(
             (a_perp_l * tf.math.conj(a_perp_r)) +
             (a_para_l * tf.math.conj(a_para_r))
         )
     ) * bw_k892
 
 
-def _j1c(amplitudes, four_mass2_over_q2):
+def j1c(amplitudes, four_mass2_over_q2_):
     """Calculate j1c angular observable"""
     [_, _, _, _, a_0_l, a_0_r, _, _] = amplitudes
     return (
         (tf.math.abs(a_0_l) ** 2) +
         (tf.math.abs(a_0_r) ** 2) +
-        (four_mass2_over_q2 * 2 * tf.math.real(a_0_l * tf.math.conj(a_0_r)))
+        (four_mass2_over_q2_ * 2 * tf.math.real(a_0_l * tf.math.conj(a_0_r)))
     ) * bw_k892
 
 
-def _j2s(amplitudes, beta2_mu):
+def j2s(amplitudes, beta2_mu_):
     """Calculate j2s angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _, _, _] = amplitudes
-    return (beta2_mu / 4.0) * (
+    return (beta2_mu_ / 4.0) * (
         (tf.math.abs(a_perp_l) ** 2) +
         (tf.math.abs(a_para_l) ** 2) +
         (tf.math.abs(a_perp_r) ** 2) +
@@ -356,19 +356,19 @@ def _j2s(amplitudes, beta2_mu):
     ) * bw_k892
 
 
-def _j2c(amplitudes, beta2_mu):
+def j2c(amplitudes, beta2_mu_):
     """Calculate j2c angular observable"""
     [_, _, _, _, a_0_l, a_0_r, _, _] = amplitudes
-    return (- beta2_mu) * (
+    return (- beta2_mu_) * (
         (tf.math.abs(a_0_l) ** 2) +
         (tf.math.abs(a_0_r) ** 2)
     ) * bw_k892
 
 
-def _j3(amplitudes, beta2_mu):
+def j3(amplitudes, beta2_mu_):
     """Calculate j3 angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _, _, _] = amplitudes
-    return (beta2_mu / 2.0) * (
+    return (beta2_mu_ / 2.0) * (
         (tf.math.abs(a_perp_l) ** 2) -
         (tf.math.abs(a_para_l) ** 2) +
         (tf.math.abs(a_perp_r) ** 2) -
@@ -376,16 +376,16 @@ def _j3(amplitudes, beta2_mu):
     ) * bw_k892
 
 
-def _j4(amplitudes, beta2_mu):
+def j4(amplitudes, beta2_mu_):
     """Calculate j4 angular observable"""
     [a_para_l, a_para_r, _, _, a_0_l, a_0_r, _, _] = amplitudes
-    return (beta2_mu / tf.sqrt(2.0)) * (
+    return (beta2_mu_ / tf.sqrt(2.0)) * (
         tf.math.real(a_0_l * tf.math.conj(a_para_l)) +
         tf.math.real(a_0_r * tf.math.conj(a_para_r))
     ) * bw_k892
 
 
-def _j5(amplitudes, beta_mu):
+def j5(amplitudes, beta_mu):
     """Calculate j5 angular observable"""
     [_, _, a_perp_l, a_perp_r, a_0_l, a_0_r, _, _] = amplitudes
     return tf.sqrt(2.0) * beta_mu * (
@@ -394,7 +394,7 @@ def _j5(amplitudes, beta_mu):
     ) * bw_k892
 
 
-def _j6s(amplitudes, beta_mu):
+def j6s(amplitudes, beta_mu):
     """Calculate j6s angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _, _, _] = amplitudes
     return 2.0 * beta_mu * (
@@ -403,7 +403,7 @@ def _j6s(amplitudes, beta_mu):
     ) * bw_k892
 
 
-def _j7(amplitudes, beta_mu):
+def j7(amplitudes, beta_mu):
     """Calculate j7 angular observable"""
     [a_para_l, a_para_r, _, _, a_0_l, a_0_r, _, _] = amplitudes
     return tf.sqrt(2.0) * beta_mu * (
@@ -412,25 +412,25 @@ def _j7(amplitudes, beta_mu):
     ) * bw_k892
 
 
-def _j8(amplitudes, beta2_mu):
+def j8(amplitudes, beta2_mu_):
     """Calculate j8 angular observable"""
     [_, _, a_perp_l, a_perp_r, a_0_l, a_0_r, _, _] = amplitudes
-    return (beta2_mu / tf.sqrt(2.0)) * (
+    return (beta2_mu_ / tf.sqrt(2.0)) * (
         tf.math.imag(a_0_l * tf.math.conj(a_perp_l)) +
         tf.math.imag(a_0_r * tf.math.conj(a_perp_r))
     ) * bw_k892
 
 
-def _j9(amplitudes, beta2_mu):
+def j9(amplitudes, beta2_mu_):
     """Calculate j9 angular observable"""
     [a_para_l, a_para_r, a_perp_l, a_perp_r, _, _, _, _] = amplitudes
-    return beta2_mu * (
+    return beta2_mu_ * (
         tf.math.imag(tf.math.conj(a_para_l) * a_perp_l) +
         tf.math.imag(tf.math.conj(a_para_r) * a_perp_r)
     ) * bw_k892
 
 
-def _j1c_prime(amplitudes):
+def j1c_prime(amplitudes):
     """Calculate j'1c angular observable"""
     [_, _, _, _, _, _, a_00_l, a_00_r] = amplitudes
     return (1 / 3) * (
@@ -439,7 +439,7 @@ def _j1c_prime(amplitudes):
     ) * bw_k700
 
 
-def _j1c_dblprime(amplitudes):
+def j1c_dblprime(amplitudes):
     """Calculate j''1c angular observable"""
     [_, _, _, _, a_0_l, a_0_r, a_00_l, a_00_r] = amplitudes
     return (2 / tf.sqrt(3.0)) * (
@@ -448,7 +448,7 @@ def _j1c_dblprime(amplitudes):
     )
 
 
-def _j4_prime(amplitudes):
+def j4_prime(amplitudes):
     """Calculate j'4 angular observable"""
     [a_para_l, a_para_r, _, _, _, _, a_00_l, a_00_r] = amplitudes
     return tf.sqrt(2.0 / 3.0) * (
@@ -457,7 +457,7 @@ def _j4_prime(amplitudes):
     )
 
 
-def _j5_prime(amplitudes):
+def j5_prime(amplitudes):
     """Calculate j'5 angular observable"""
     [_, _, a_perp_l, a_perp_r, _, _, a_00_l, a_00_r] = amplitudes
     return 2 * tf.sqrt(2.0 / 3.0) * (
@@ -466,7 +466,7 @@ def _j5_prime(amplitudes):
     )
 
 
-def _j7_prime(amplitudes):
+def j7_prime(amplitudes):
     """Calculate j'7 angular observable"""
     [a_para_l, a_para_r, _, _, _, _, a_00_l, a_00_r] = amplitudes
     return 2 * tf.sqrt(2.0 / 3.0) * (
@@ -475,7 +475,7 @@ def _j7_prime(amplitudes):
     )
 
 
-def _j8_prime(amplitudes):
+def j8_prime(amplitudes):
     """Calculate j'8 angular observable"""
     [_, _, a_perp_l, a_perp_r, _, _, a_00_l, a_00_r] = amplitudes
     return tf.sqrt(2.0 / 3.0) * (
@@ -484,7 +484,7 @@ def _j8_prime(amplitudes):
     )
 
 
-def _integrate_decay_rate(coeffs):
+def integrate_decay_rate(coeffs):
     """
     Integrate previously angle integrated decay rate function over q^2 for particular amplitude coefficients
     """
@@ -496,7 +496,7 @@ def _integrate_decay_rate(coeffs):
     )
 
 
-def _coeffs_to_amplitudes(coeffs, q2):
+def coeffs_to_amplitudes(coeffs, q2):
     """
     Arrange flat list of coefficients into list of amplitudes
 

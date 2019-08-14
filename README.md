@@ -119,23 +119,27 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 * Get checked (regards to relativistic mass) coeffs from Mark
 * Lazy importing for BW?
-* Add script to plot amplitudes/observables
-* Change coefficient randomization to -/+ 2x and show discrete symmetries exist
+* Add script to plot amplitudes/observables/diff decay rate
 * Make CSV reading into module/write tests.
 * Cleanup plotter/add NP vs SM/write docs
-* Add real signal values for a_00_l and a_00_r.
+
+* Change coefficient randomization to -/+ 2x and show discrete symmetries exist
 * Compare SM vs NP (Use same largest range) for std err/pulls. Compare P values.
 * Compare different optimizer learning rates for speed/std err/pulls
 * Compare different optimizer momentum for speed/std err/pulls
 * Use pulls to find out what params are biased
 * Plot C9 vs C10. Do we trust uncertainties?
-* How do errors propagate from uncertainty in mass terms?
 * Add confidence plots (See fig 5 of arXiv:1504.00574)
 * Show pulls when starting coefficients at generated values
 * Bullet main ideas for report (do more reading/check notes)
 
+* Split signal.py into other files (e.g. observables, decay_rate). Sort coeffs vs amplitudes params.
+* Check/complete all docstrings
+* How do errors propagate from uncertainty in mass terms?
 * Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
 * Write documentation of why AMSGrad works over Adam
+
+* Add real signal values for a_00_l and a_00_r.
 * Tune the optimizer better to improve fitting performance and quality.
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
 and fitting based on nuisance parameters for those polynomials.

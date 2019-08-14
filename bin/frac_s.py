@@ -18,7 +18,7 @@ with bmf.Script() as script:
 
     plt.plot(q2.numpy(), decay_rate_frac_s.numpy(), label='decay_rate')
     plt.plot(q2.numpy(), modulus_frac_s.numpy(), label='modulus')
-    plt.xlabel(r'$q^2$')
+    plt.xlabel(r'$q^2$ / GeV')
     plt.ylabel(r'$F_s$')
     plt.legend()
     plt.show()

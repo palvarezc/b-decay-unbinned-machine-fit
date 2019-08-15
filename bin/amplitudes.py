@@ -23,6 +23,6 @@ with bmf.Script() as script:
 
         plt.plot(q2.numpy(), real.numpy(), label=real_latex_name)
         plt.plot(q2.numpy(), imag.numpy(), label=imag_latex_name)
-        plt.xlabel(r'$q^2$ / GeV')
+        plt.xlabel(r'$q^2 / (GeV^2/c^4)$')
         plt.legend()
         plt.show()

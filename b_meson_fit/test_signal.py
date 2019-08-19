@@ -18,10 +18,10 @@ class TestSignal(unittest.TestCase):
     #  2. Run the test_data/signal_integrator.py file to get the "true" values
     #  3. Set the found decay rate in your new line
     test_coeffs = [
-        ('signal', bmfc.signal(bmfc.NP), 487.20193,),
-        ('ones', [tf.constant(1.0)] * bmfc.count, 2687.5159,),
-        ('integers', [tf.constant(float(i)) for i in range(int(-bmfc.count / 2), int(bmfc.count / 2))], 436425.156,),
-        ('minus_point_ones', [tf.constant(-0.1)] * bmfc.count, 26.875162,),
+        ('signal', bmfc.signal(bmfc.NP), 543.44989,),
+        ('ones', [tf.constant(1.0)] * bmfc.count, 3082.3848,),
+        ('integers', [tf.constant(float(i)) for i in range(int(-bmfc.count / 2), int(bmfc.count / 2))], 515583.66,),
+        ('minus_point_ones', [tf.constant(-0.1)] * bmfc.count, 30.823853,),
     ]
 
     def test_decay_rate_integration_methods_approx_equal(self):

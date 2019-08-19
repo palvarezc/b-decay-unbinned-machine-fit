@@ -17,7 +17,7 @@ combos = [
 ]
 iterations = 2000
 # Set all default fit coefficients to the same value to make comparison possible
-bmf.coeffs.fit_default = 1.0
+fit_default = 1.0
 
 with bmf.Script() as script:
     signal_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
@@ -32,7 +32,7 @@ with bmf.Script() as script:
         test_name, name, learning_rate, params, clip = combo
 
         optimizer = bmf.Optimizer(
-            bmf.coeffs.fit(),  # Generate new fit coefficients for each run
+            bmf.coeffs.fit(fit_default),  # Generate new fit coefficients for each run
             signal_events,
             opt_name=name,
             learning_rate=learning_rate,

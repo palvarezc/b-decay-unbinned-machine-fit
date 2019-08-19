@@ -52,6 +52,27 @@ $ ./bin/fit.py -i 1000 -c SM_run.csv -S SM
 $ ./bin/fit.py -i 1000 -c NP_run.csv -S NP
 ```
 
+The initialization scheme for the fit coefficients can be chosen with the `-f` or `--fit-init` options. 
+You can use a specific algorithm. E.g.:
+
+```
+$ ./bin/fit.py -f TWICE_LARGEST_SIGNAL_SAME_SIGN
+```
+
+The algorithms available are:
+
+ * `TWICE_LARGEST_SIGNAL_SAME_SIGN`: Initialize coefficients from `0` to `2x` the largest value for each coefficient
+  in all signal models.
+ * `TWICE_CURRENT_SIGNAL_ANY_SIGN`: Initialize coefficients from `-2x` to `+2x` the value in the signal model used.
+ * `CURRENT_SIGNAL`: Initialize coefficients to the same values as the signal model used.
+ 
+Alternatively the fit coefficients can all be initialized to a specific value.
+To do that specify a floating point number. E.g.:
+
+```
+$ ./bin/fit.py -f 123.456
+```
+
 The target device (e.g. `GPU:0`, `GPU:1`, `CPU:0` etc.) can be specified with `-d` or `--device`. This can be useful
 if you want to start multiple scripts in parallel running on different devices. The value defaults to `GPU:0`. E.g.:
 
@@ -117,8 +138,6 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-* Add cmdline flag to control randomization (sign, use largest, use model, constant etc.)
-
 Plots:
 
 * Plot CP averaged/antisymmetric observables?
@@ -134,8 +153,10 @@ Cleanup:
 * Cleanup plotter/write docs
 * Split signal.py into other files (e.g. observables, decay_rate). Sort coeffs vs amplitudes params.
 * Check/complete all docstrings
+* Split signal plotting into separate file
 * Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
 * Rename/document all scripts
+* Add warnings to docs about adding/changing signal coefficients & the effect on "largest" initialization
 * Test all scripts/unit tests
 * Ensure default optimizer params are sensible
 * Document commands for how data and figures were generated for report

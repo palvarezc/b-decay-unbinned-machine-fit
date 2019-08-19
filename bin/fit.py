@@ -16,6 +16,17 @@ if 'PYCHARM_HOSTED' in os.environ:
 
 tf.enable_v2_behavior()
 
+
+def fit_init_value(arg):  # Handle --fit-init argument
+    if arg in bmf.coeffs.fit_init_schemes:
+        return arg
+    try:
+        init_value = float(arg)
+    except ValueError:
+        raise ValueError('{} is not one of '.format(bmf.coeffs.fit_init_schemes + ['FLOAT']))
+    return init_value
+
+
 columns = shutil.get_terminal_size().columns
 parser = argparse.ArgumentParser(
     description='Fit coefficients to generated toy signal(s).',
@@ -33,6 +44,18 @@ parser.add_argument(
     dest='device',
     default=bmf.Script.device_default,
     help='use this device e.g. CPU:0, GPU:0, GPU:1 (default: {})'.format(bmf.Script.device_default),
+)
+parser.add_argument(
+    '-f',
+    '--fit-init',
+    dest='fit_init',
+    type=fit_init_value,
+    metavar='FIT_INIT',
+    default=bmf.coeffs.fit_initialization_scheme_default,
+    help='fit coefficient initialization. FIT_INIT should be one of {} (default: {})'.format(
+        bmf.coeffs.fit_init_schemes + ['FLOAT'],
+        bmf.coeffs.fit_initialization_scheme_default
+    )
 )
 parser.add_argument(
     '-i',
@@ -174,7 +197,7 @@ with bmf.Script(device=args.device) as script:
         attempt = 1
         converged = False
         while not converged:
-            fit_coeffs = bmf.coeffs.fit(signal_coeffs)
+            fit_coeffs = bmf.coeffs.fit(args.fit_init, signal_coeffs)
             optimizer = bmf.Optimizer(
                 fit_coeffs,
                 signal_events,

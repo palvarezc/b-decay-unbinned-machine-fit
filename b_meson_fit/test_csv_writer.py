@@ -36,17 +36,14 @@ class TestCsv(unittest.TestCase):
 
         signal_coeffs = bmfc.signal(bmfc.SM)
 
-        # Ensure fit coefficients are constants
-        bmfc.fit_default = 12.345
-
         csv_writer = bmfw.CsvWriter(tmp_file, signal_coeffs)
         csv_writer.write_coeffs(1.2, bmfc.signal(bmfc.SM), 14.8)
-        csv_writer.write_coeffs(3.4, bmfc.fit(), 15.3)
+        csv_writer.write_coeffs(3.4, bmfc.fit(12.345), 15.3)
         csv_writer.write_coeffs(5.6, bmfc.signal(bmfc.NP), 13.9)
         self._compare('csv_writer_rows_first_write.csv', tmp_file, 'Non-existent file gets rows written correctly')
 
         csv_writer = bmfw.CsvWriter(tmp_file, signal_coeffs)
-        csv_writer.write_coeffs(7.8, bmfc.fit(), 14.0)
+        csv_writer.write_coeffs(7.8, bmfc.fit(67.890), 14.0)
         self._compare('csv_writer_rows_append.csv', tmp_file, 'Existing file gets rows appended correctly')
 
     def test_write_headers_only(self):

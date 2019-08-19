@@ -133,47 +133,77 @@ names = ['{}_{}'.format(a, p) for a in amplitude_names for p in param_names]
 latex_names = ['{} {}'.format(a, p) for a in amplitude_latex_names for p in param_latex_names]
 count = len(names)
 
-# If fit_default is not set, then fit coefficients should be randomly generated (See fit())
-fit_default = None
+# Fit coefficient initialization schemes
+FIT_INIT_TWICE_LARGEST_SIGNAL_SAME_SIGN = 'TWICE_LARGEST_SIGNAL_SAME_SIGN'
+FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN = 'TWICE_CURRENT_SIGNAL_ANY_SIGN'
+FIT_INIT_CURRENT_SIGNAL = 'CURRENT_SIGNAL'
+fit_init_schemes = [
+    FIT_INIT_TWICE_LARGEST_SIGNAL_SAME_SIGN,
+    FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN,
+    FIT_INIT_CURRENT_SIGNAL,
+]
+fit_initialization_scheme_default = FIT_INIT_TWICE_LARGEST_SIGNAL_SAME_SIGN
 
 
-def signal(name):
+def signal(model):
     """Turn our signal coefficient numbers into a flat list of constant tensors
     """
-    if name not in _signal_coeffs:
-        raise ValueError('No {} signal coefficients defined'.format(name))
-    return [tf.constant(_p) for _a in _signal_coeffs[name] for _c in _a for _p in _c]
+    if model not in _signal_coeffs:
+        raise ValueError('No {} signal coefficients defined'.format(model))
+    return [tf.constant(_p) for _a in _signal_coeffs[model] for _c in _a for _p in _c]
 
 
-def fit(signal_coeffs=None):
-    """Construct a flat list of tensors to represent what we're going to fit.
-
-    If the global fit_default is set as None then generate random initial values
-    of +/- 100% of the signal value for this coefficient.
+def fit(initialization=fit_initialization_scheme_default, current_signal_coeffs=None):
+    """Construct a flat list of tensors to represent what we're going to fit
 
     Tensors that represent non-fixed coefficients in this basis are tf.Variables
     Tensors that represent fixed coefficients in this basis set as constant 0's
 
     Args:
-        signal_coeffs (list of tensors, optional): If randomization is enabled then the signal
-            coeffs must be passed in
+        initialization (float or str): Constant float value to initialize all trainable coefficients to, or an
+            initialization scheme listed in `fit_init_schemes`
+        current_signal_coeffs (list of tensors, optional): Signal coefficients to be used for randomization if the
+            FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN or FIT_INIT_CURRENT_SIGNAL initialization schemes are used
     """
+    if initialization in [FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN, FIT_INIT_CURRENT_SIGNAL] \
+            and current_signal_coeffs is None:
+        raise ValueError('current_signal_coeffs must be supplied when using {} initialization', initialization)
+
+    max_signal_coeffs = [0.0] * count
+    for signal_model in signal_models:
+        signal_coeffs = [_p for _a in _signal_coeffs[signal_model] for _c in _a for _p in _c]
+        for signal_idx, signal_coeff in enumerate(signal_coeffs):
+            if abs(signal_coeff) > max_signal_coeffs[signal_idx]:
+                max_signal_coeffs[signal_idx] = signal_coeff
+
     fit_trainable_ids = list(itertools.chain(range(0, 21), range(24, 27), [36], [39], [42], [45]))
 
     fit_coeffs = []
 
     for i in range(count):
         if i in fit_trainable_ids:
-            if fit_default:
-                init_value = fit_default
-            else:
-                if signal_coeffs is None:
-                    raise ValueError('signal_coeffs must be specified with fit coefficient randomization')
+            if initialization == FIT_INIT_TWICE_LARGEST_SIGNAL_SAME_SIGN:
+                # Initialize coefficient from 0 to 2x largest value in all signal models
                 init_value = tf.random.uniform(
                     shape=(),
-                    minval=tf.math.minimum(0.0, 2 * signal_coeffs[i]),
-                    maxval=tf.math.maximum(0.0, 2 * signal_coeffs[i]),
+                    minval=tf.math.minimum(0.0, 2 * max_signal_coeffs[i]),
+                    maxval=tf.math.maximum(0.0, 2 * max_signal_coeffs[i]),
                 )
+            elif initialization == FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN:
+                # Initialize coefficient from -2x to +2x value in this signal model
+                init_value = tf.random.uniform(
+                    shape=(),
+                    minval=-tf.math.abs(2 * current_signal_coeffs[i]),
+                    maxval=tf.math.abs(2 * current_signal_coeffs[i]),
+                )
+            elif initialization == FIT_INIT_CURRENT_SIGNAL:
+                # Initialize coefficient to the value in this signal model
+                init_value = current_signal_coeffs[i]
+            elif isinstance(initialization, float):
+                # Initialize coefficient to the specified value (Useful for testing)
+                init_value = initialization
+            else:
+                raise ValueError('Initialization scheme {} in undefined'.format(initialization))
 
             coeff = tf.Variable(init_value, name=names[i])
         else:

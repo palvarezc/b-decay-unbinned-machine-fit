@@ -117,31 +117,31 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-* Get checked (regards to relativistic mass) coeffs from Mark
-* Add cmdline flag to control randomization (sign, use largest, constant etc.)
+* Add cmdline flag to control randomization (sign, use largest, use model, constant etc.)
+
+Plots:
+
 * Plot CP averaged/antisymmetric observables?
-* Implement test statistics (arXiv:1504.00574 chapter 5)
-* Plot C9 vs C10. Do we trust uncertainties?
+* Implement test statistics (arXiv:1504.00574 chapter 5) (Use largest range)
+* Implement P-value comparison? (Use largest range)
+* Implement likelihood distributions?
+* Plot C9 vs C10
 
-
-* Change coefficient randomization to -/+ 2x and show discrete symmetries exist
-* Compare SM vs NP (Use same largest range) for std err/pulls. Compare P values.
-* Compare different optimizer learning rates for speed/std err/pulls
-* Compare different optimizer momentum for speed/std err/pulls
-* Use pulls to find out what params are biased
-* Show pulls when starting coefficients at generated values
-* Bullet main ideas for report (do more reading/check notes)
-
+Cleanup:
 
 * Lazy importing for BW?
 * Make CSV reading into module/write tests.
 * Cleanup plotter/write docs
 * Split signal.py into other files (e.g. observables, decay_rate). Sort coeffs vs amplitudes params.
 * Check/complete all docstrings
-* How do errors propagate from uncertainty in mass terms?
 * Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
-* Write documentation of why AMSGrad works over Adam
+* Rename/document all scripts
+* Test all scripts/unit tests
+* Ensure default optimizer params are sensible
+* Document commands for how data and figures were generated for report
+* Put paper in repo
 
+Further:
 
 * Add real signal values for a_00_l and a_00_r.
 * Tune the optimizer better to improve fitting performance and quality.

@@ -9,6 +9,8 @@ tf.enable_v2_behavior()
 
 
 class Optimizer:
+    # AMSGrad is used as the optimizer as Adam suffers from exploding gradients on the earlier converged
+    #  converged coefficients before all have converged.
     opt_name_default = 'AMSGrad'
     learning_rate_default = 0.20
     grad_clip_default = None

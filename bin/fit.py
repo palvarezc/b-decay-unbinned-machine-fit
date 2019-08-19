@@ -131,8 +131,10 @@ with bmf.Script(device=args.device) as script:
     if args.log:
         log = bmf.Log(script.name)
 
+    signal_coeffs = bmf.coeffs.signal(args.signal_model)
+
     if args.csv_file is not None:
-        writer = bmf.CsvWriter(args.csv_file)
+        writer = bmf.CsvWriter(args.csv_file, signal_coeffs)
         if writer.current_id > 0:
             bmf.stdout('{} already contains {} iteration(s)'.format(args.csv_file, writer.current_id))
             bmf.stdout('')
@@ -152,7 +154,6 @@ with bmf.Script(device=args.device) as script:
         # Time each iteration for CSV writing
         script.timer_start('fit')
 
-        signal_coeffs = bmf.coeffs.signal(args.signal_model)
         signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
 
         # If running if PyCharm, plot our signal distributions for each independent variable

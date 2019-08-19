@@ -91,3 +91,5 @@ class TestCsv(unittest.TestCase):
         return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test_data', filename)
 
 
+if __name__ == '__main__':
+    unittest.main()

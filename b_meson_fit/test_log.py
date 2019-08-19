@@ -24,3 +24,7 @@ class TestLog(unittest.TestCase):
             os.path.realpath('../logs/unittest/20101112-131415/somesuffix'),
             os.path.realpath(log_inst.dir('somesuffix'))
         )
+
+
+if __name__ == '__main__':
+    unittest.main()

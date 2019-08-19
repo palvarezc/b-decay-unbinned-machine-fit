@@ -71,3 +71,7 @@ class TestCoeffs(unittest.TestCase):
                     else:
                         self.assertEqual(0.0, fit[i].numpy(), 'Coeff {} != 0.0'.format(i))
                         self.assertFalse(bmfc.is_trainable(fit[i]), 'Coeff {} should not be trainable'.format(i))
+
+
+if __name__ == '__main__':
+    unittest.main()

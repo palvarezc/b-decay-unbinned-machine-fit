@@ -52,7 +52,7 @@ fit() {
         opts="${opts} --fit-init ${fit_init}"
     fi
 
-    ./bin/fit.py ${opts} --csv ${csv} --iteration ${iteration}
+    ./bin/fit.py ${opts} --csv ${csv} --iteration ${iteration} --signal-model ${model}
     echo
 }
 

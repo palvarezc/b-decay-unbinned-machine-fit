@@ -67,8 +67,7 @@ class TestCoeffs(unittest.TestCase):
             and that randomisation/defaults work
         """
         signal = bmfc.signal(bmfc.SM)
-
-        fit = bmfc.fit(bmfc.FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN, signal)
+        fit = bmfc.fit(bmfc.FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN, bmfc.SM)
 
         for i in range(48):
             if i in self.fit_trainable_ids:
@@ -85,8 +84,7 @@ class TestCoeffs(unittest.TestCase):
             and that randomisation/defaults work
         """
         signal = bmfc.signal(bmfc.SM)
-
-        fit = bmfc.fit(bmfc.FIT_INIT_CURRENT_SIGNAL, signal)
+        fit = bmfc.fit(bmfc.FIT_INIT_CURRENT_SIGNAL, bmfc.SM)
 
         for i in range(48):
             if i in self.fit_trainable_ids:
@@ -101,6 +99,22 @@ class TestCoeffs(unittest.TestCase):
         for i in range(48):
             if i in self.fit_trainable_ids:
                 nt.assert_allclose(tf.constant(12.345).numpy(), fit[i].numpy(), atol=0, rtol=1e-10)
+
+    def test_fit_coeffs_fix_p_wave(self):
+        """Check fit coefficients works properly when passing `fix_p_wave_model`"""
+        signal = bmfc.signal(bmfc.SM)
+        fit = bmfc.fit(12.345, fix_p_wave_model=bmfc.SM)
+
+        for i in range(48):
+            if i in self.fit_trainable_ids:
+                if i < 36:
+                    # P-wave coeffs should be locked to the signal model values
+                    nt.assert_allclose(signal[i].numpy(), fit[i].numpy(), atol=0, rtol=1e-10)
+                    self.assertFalse(bmfc.is_trainable(fit[i]), 'Coeff {} should not be trainable'.format(i))
+                else:
+                    # S-wave coeffs should be set to the constant value and be trainable
+                    nt.assert_allclose(tf.constant(12.345).numpy(), fit[i].numpy(), atol=0, rtol=1e-10)
+                    self.assertTrue(bmfc.is_trainable(fit[i]), 'Coeff {} should be trainable'.format(i))
 
     def test_fit_coeffs_trainable(self):
         """Check fit coefficients have correct # and the right ones are trainable"""

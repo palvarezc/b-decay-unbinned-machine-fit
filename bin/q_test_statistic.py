@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Fit amplitude coefficients to signal events"""
+"""Generate Q test statistics"""
 
 import argparse
 import os
@@ -8,11 +8,6 @@ import tensorflow.compat.v2 as tf
 import tqdm
 
 import b_meson_fit as bmf
-
-# Only do plots if running PyCharm
-if 'PYCHARM_HOSTED' in os.environ:
-    import matplotlib.pylab as plt
-    import seaborn as sns
 
 tf.enable_v2_behavior()
 
@@ -29,14 +24,8 @@ def fit_init_value(arg):  # Handle --fit-init argument
 
 columns = shutil.get_terminal_size().columns
 parser = argparse.ArgumentParser(
-    description='Fit coefficients to generated toy signal(s).',
+    description='Generate Q test statistics for a signal model.',
     formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=columns, width=columns),
-)
-parser.add_argument(
-    '-c',
-    '--csv',
-    dest='csv_file',
-    help='write results to this CSV file'
 )
 parser.add_argument(
     '-d',
@@ -81,6 +70,14 @@ parser.add_argument(
     help='restart iteration if not converged after this many steps (default: 20000)'
 )
 parser.add_argument(
+    '-n',
+    '--null-model',
+    dest='null_model',
+    required=True,
+    choices=bmf.coeffs.signal_models,
+    help='fix null P-wave fit coeffs to the values in this signal model'
+)
+parser.add_argument(
     '-o',
     '--opt-name',
     dest='opt_name',
@@ -123,9 +120,25 @@ parser.add_argument(
     '-S',
     '--signal-model',
     dest='signal_model',
+    required=True,
     choices=bmf.coeffs.signal_models,
     default=bmf.coeffs.SM,
     help='signal model (default: {})'.format(bmf.coeffs.SM)
+)
+parser.add_argument(
+    '-t',
+    '--test-model',
+    dest='test_model',
+    required=True,
+    choices=bmf.coeffs.signal_models,
+    help='fix test P-wave fit coeffs to the values in this signal model'
+)
+parser.add_argument(
+    '-x',
+    '--txt',
+    dest='txt_file',
+    required=True,
+    help='write results to this txt file'
 )
 parser.add_argument(
     '-u',
@@ -156,68 +169,54 @@ with bmf.Script(device=args.device) as script:
 
     signal_coeffs = bmf.coeffs.signal(args.signal_model)
 
-    if args.csv_file is not None:
-        writer = bmf.CsvWriter(args.csv_file, signal_coeffs)
-        if writer.current_id > 0:
-            bmf.stdout('{} already contains {} iteration(s)'.format(args.csv_file, writer.current_id))
-            bmf.stdout('')
-            if writer.current_id >= args.iterations:
-                bmf.stderr('Nothing to do')
-                exit(0)
-            iteration = writer.current_id
+    if os.path.isfile(args.txt_file):
+        num_lines = sum(1 for line in open(args.txt_file))
+        bmf.stdout('{} already contains {} iteration(s)'.format(args.txt_file, num_lines))
+        bmf.stdout('')
+        if num_lines >= args.iterations:
+            bmf.stderr('Nothing to do')
+            exit(0)
+        iteration = num_lines
 
-    # Show progress bar for fits
-    for iteration in tqdm.trange(
-            iteration + 1,
-            args.iterations + 1,
-            initial=iteration,
-            total=args.iterations,
-            unit='fit'
-    ):
-        # Time each iteration for CSV writing
-        script.timer_start('fit')
+    with open(args.txt_file, 'a') as txt_file:
+        # Show progress bar for statistics
+        for iteration in tqdm.trange(
+                iteration + 1,
+                args.iterations + 1,
+                initial=iteration,
+                total=args.iterations,
+                unit='test stat'
+        ):
+            signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
 
-        signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
+            def nll(fix_coeffs_model):
+                attempt = 1
+                while True:
+                    fit_coeffs = bmf.coeffs.fit(args.fit_init, args.signal_model, fix_coeffs_model)
+                    optimizer = bmf.Optimizer(
+                        fit_coeffs,
+                        signal_events,
+                        opt_name=args.opt_name,
+                        learning_rate=args.learning_rate,
+                        opt_params=opt_params,
+                        grad_clip=args.grad_clip,
+                        grad_max_cutoff=args.grad_max_cutoff
+                    )
 
-        # If running if PyCharm, plot our signal distributions for each independent variable
-        if 'PYCHARM_HOSTED' in os.environ:
-            fig, axes = plt.subplots(nrows=2, ncols=2)
-            fig.suptitle('Signal (Iteration {}/{})'.format(iteration, args.iterations))
-            titles = [
-                r'$q^2$',
-                r'$\cos{\theta_k}$',
-                r'$\cos{\theta_l}$',
-                r'$\phi$'
-            ]
-            for ax, feature, title in zip(axes.flatten(), signal_events.numpy().transpose(), titles):
-                sns.distplot(feature, ax=ax, bins=20)
-                ax.set(title=title)
-            plt.show()
+                    while True:
+                        optimizer.minimize()
+                        if args.log:
+                            log.coefficients('q_test_stat_{}'.format(iteration), optimizer, signal_coeffs)
+                        if optimizer.converged():
+                            # Multiply the normalized_nll up into the full nll
+                            return optimizer.normalized_nll * args.signal_count
+                        if optimizer.step >= args.max_step:
+                            bmf.stderr('No convergence after {} steps. Restarting iteration'.format(args.max_step))
+                            attempt = attempt + 1
+                            break
 
-        attempt = 1
-        converged = False
-        while not converged:
-            fit_coeffs = bmf.coeffs.fit(args.fit_init, args.signal_model)
-            optimizer = bmf.Optimizer(
-                fit_coeffs,
-                signal_events,
-                opt_name=args.opt_name,
-                learning_rate=args.learning_rate,
-                opt_params=opt_params,
-                grad_clip=args.grad_clip,
-                grad_max_cutoff=args.grad_max_cutoff
-            )
+            test_nll = nll(args.test_model)
+            null_nll = nll(args.null_model)
+            q = 2 * (test_nll - null_nll)
 
-            while True:
-                optimizer.minimize()
-                if args.log:
-                    log.coefficients('fit_{}'.format(iteration), optimizer, signal_coeffs)
-                if optimizer.converged():
-                    converged = True
-                    if args.csv_file is not None:
-                        writer.write_coeffs(optimizer.normalized_nll.numpy(), fit_coeffs, script.timer_elapsed('fit'))
-                    break
-                if optimizer.step >= args.max_step:
-                    bmf.stderr('No convergence after {} steps. Restarting iteration'.format(args.max_step))
-                    attempt = attempt + 1
-                    break
+            txt_file.write('{}\n'.format(q))

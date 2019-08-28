@@ -85,6 +85,8 @@ _signal_coeffs = {
         ],
     ],
 }
+_signal_coeffs_p_wave_idxs = range(0, 36)
+_signal_coeffs_s_wave_idxs = range(36, 48)
 signal_models = list(_signal_coeffs.keys())
 
 amplitude_names = [
@@ -153,7 +155,7 @@ def signal(model):
     return [tf.constant(_p) for _a in _signal_coeffs[model] for _c in _a for _p in _c]
 
 
-def fit(initialization=fit_initialization_scheme_default, current_signal_coeffs=None):
+def fit(initialization=fit_initialization_scheme_default, current_signal_model=None, fix_p_wave_model=None):
     """Construct a flat list of tensors to represent what we're going to fit
 
     Tensors that represent non-fixed coefficients in this basis are tf.Variables
@@ -162,12 +164,19 @@ def fit(initialization=fit_initialization_scheme_default, current_signal_coeffs=
     Args:
         initialization (float or str): Constant float value to initialize all trainable coefficients to, or an
             initialization scheme listed in `fit_init_schemes`
-        current_signal_coeffs (list of tensors, optional): Signal coefficients to be used for randomization if the
+        current_signal_model (str, optional): Current signal model. Must be specified for randomization if the
             FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN or FIT_INIT_CURRENT_SIGNAL initialization schemes are used
+        fix_p_wave_model (str, optional): Model to fix all P-wave coefficients to. Useful for generating Q test stats
     """
     if initialization in [FIT_INIT_TWICE_CURRENT_SIGNAL_ANY_SIGN, FIT_INIT_CURRENT_SIGNAL] \
-            and current_signal_coeffs is None:
-        raise ValueError('current_signal_coeffs must be supplied when using {} initialization', initialization)
+            and current_signal_model is None:
+        raise ValueError('initialization_model must be supplied when using {} initialization'.format(initialization))
+    if current_signal_model is not None and current_signal_model not in signal_models:
+        raise ValueError('current_signal_model {} unknown'.format(current_signal_model))
+    current_signal_coeffs = signal(current_signal_model) if current_signal_model is not None else None
+    if fix_p_wave_model is not None and fix_p_wave_model not in signal_models:
+        raise ValueError('fix_p_wave_model {} unknown'.format(fix_p_wave_model))
+    fix_p_wave_coeffs = signal(fix_p_wave_model) if fix_p_wave_model is not None else None
 
     max_signal_coeffs = [0.0] * count
     for signal_model in signal_models:
@@ -181,7 +190,10 @@ def fit(initialization=fit_initialization_scheme_default, current_signal_coeffs=
     fit_coeffs = []
 
     for i in range(count):
-        if i in fit_trainable_ids:
+        if i <= _signal_coeffs_p_wave_idxs[-1] and fix_p_wave_coeffs is not None:
+            # This is a P-wave coeff and we've been told to copy a signal value
+            coeff = tf.constant(fix_p_wave_coeffs[i])
+        elif i in fit_trainable_ids:
             if initialization == FIT_INIT_TWICE_LARGEST_SIGNAL_SAME_SIGN:
                 # Initialize coefficient from 0 to 2x largest value in all signal models
                 init_value = tf.random.uniform(

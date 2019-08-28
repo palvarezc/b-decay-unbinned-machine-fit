@@ -101,14 +101,34 @@ this value with the `-u` or `--grad-max-cutoff` arguments:
 $ ./bin/fit.py -u 1e-8
 ```
 
+## Q test statistic
+
+The script [q_test_statistic.py](./bin/q_test_statistic.py) can be used to generate Q test statistics. The script
+allows all options that [fit.py](./bin/fit.py) does except the `-c` or `--csv` options.
+
+Additionally the `-n`/`--null-model`, `-t`/`--test-model` and `-x`/`--txt` options are required.
+
+The `--null-model` and `--test-model` specifies which signal coefficient model the P-wave fit coefficients
+should be fixed to for the null and test hypotheses respectively.
+
+The `--txt` option specifies an output txt file to write to.
+
+An example usage is:
+
+```
+$ ./bin/q_test_statistic.py -x Q_NP.txt -i 1000 -S NP -t NP -n SM
+$ ./bin/q_test_statistic.py -x Q_SM.txt -i 1000 -S SM -t NP -n SM
+```
+
 ## Using Tensorboard
 
 [Tensorboard](https://www.tensorflow.org/guide/summaries_and_tensorboard) can be used to tune the optimizer. Values
-will be logged for Tensorboard from either [compare_optimizers.py](./bin/compare_optimizers.py), or when running the 
-[fit.py](./bin/fit.py) script with the `-l` or `--log` arguments. Note that logging statistics has a large performance
-hit so should not be used for production runs. Once scripts that have logging enabled start, they will output
-the command to start Tensorboard. Additionally they will output a `Filter regex` that can be used in the left hand pane
-of the `Scalars` page to filter that particular run.
+will be logged for Tensorboard from either the [compare_optimizers.py](./bin/compare_optimizers.py),
+[fit.py](./bin/fit.py), or [q_test_statistic.py](./bin/q_test_statistic.py) scripts with the `-l` or `--log` arguments.
+Note that logging statistics has a large performance hit so should not be used for production runs.
+Once scripts that have logging enabled start, they will output the command to start Tensorboard.
+Additionally they will output a `Filter regex` that can be used in the left hand pane of the `Scalars` page to filter
+that particular run.
 
 ## Profiling
 
@@ -138,23 +158,17 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-Plots:
-
-* Plot CP averaged/antisymmetric observables?
-* Implement test statistics (arXiv:1504.00574 chapter 5) (Use largest range)
-* Implement P-value comparison? (Use largest range)
-* Implement likelihood distributions?
-* Plot C9 vs C10
-
 Cleanup:
+
+* Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
+* Cleanup plotters/write docs
 
 * Lazy importing for BW?
 * Make CSV reading into module/write tests.
-* Cleanup plotter/write docs
 * Split signal.py into other files (e.g. observables, decay_rate). Sort coeffs vs amplitudes params.
 * Check/complete all docstrings
 * Split signal plotting into separate file
-* Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
+* Centralise/merge fit.py/q_test_statistic.py
 * Rename/document all scripts
 * Add warnings to docs about adding/changing signal coefficients & the effect on "largest" initialization
 * Test all scripts/unit tests

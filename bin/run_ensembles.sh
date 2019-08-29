@@ -1,19 +1,22 @@
 #!/bin/bash
+# This is a quick and dirty bash script that generates all data for publication
+# Output files are built up in stripes so that some data is available to use quickly
 
 set -e
 
-fit_iterations_max=1000
-q_stat_iterations_max=5000
 iteration_step=250
-
-models="SM NP"
-
-rates="0.05 0.10 0.15 0.20"
-beta1s="0.85 0.95"
-beta2s="0.995 0.9995"
-epsilons="1e-03 1e-05"
-
 results_dir="results"
+
+fit_iterations_max=1000
+fit_models="SM NP"
+fit_rates="0.05 0.10 0.15 0.20"
+fit_beta1s="0.85 0.95"
+fit_beta2s="0.995 0.9995"
+fit_epsilons="1e-03 1e-05"
+
+q_stat_iterations_max=5000
+q_stat_models="SM NP"
+q_stat_signal_counts="600 2400"
 
 is_run_needed() {
     filename=$1
@@ -77,21 +80,21 @@ cd ${BASH_SOURCE[0]%/*}/..
 # Generate fit CSVs
 for iteration in $(seq ${iteration_step} ${iteration_step} ${fit_iterations_max})
 do
-    for model in ${models}
+    for model in ${fit_models}
     do
-        for rate in ${rates}
+        for rate in ${fit_rates}
         do
                 fit ${iteration} ${model} ${rate} def def def def
         done
-        for beta1 in ${beta1s}
+        for beta1 in ${fit_beta1s}
         do
                 fit ${iteration} ${model} def ${beta1} def def def
         done
-        for beta2 in ${beta2s}
+        for beta2 in ${fit_beta2s}
         do
                 fit ${iteration} ${model} def def ${beta2} def def
         done
-        for epsilon in ${epsilons}
+        for epsilon in ${fit_epsilons}
         do
                 fit ${iteration} ${model} def def def ${epsilon} def
         done
@@ -103,15 +106,19 @@ done
 # Generate Q test txt files
 for iteration in $(seq ${iteration_step} ${iteration_step} ${q_stat_iterations_max})
 do
-    for dataset_model in ${models}
+    for dataset_model in ${q_stat_models}
     do
-         txt="${results_dir}/q_test_stat-${dataset_model}.txt"
-         is_run_needed "${txt}" "${iteration}" 0 || continue
-        ./bin/q_test_statistic.py \
-            --txt ${txt} \
-            --iteration ${iteration} \
-            --signal-model ${dataset_model} \
-            --test-model NP \
-            --null-model SM
+        for signal_count in ${q_stat_signal_counts}
+        do
+            txt="${results_dir}/q_test_stat-${signal_count}-${dataset_model}.txt"
+            is_run_needed "${txt}" "${iteration}" 0 || continue
+            ./bin/q_test_statistic.py \
+                --txt ${txt} \
+                --iteration ${iteration} \
+                --signal-count ${signal_count} \
+                --signal-model ${dataset_model} \
+                --test-model NP \
+                --null-model SM
+        done
     done
 done

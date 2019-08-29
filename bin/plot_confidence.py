@@ -5,7 +5,7 @@ Plot confidence, mean and signal values for an ensemble run
 
 import argparse
 import csv
-import matplotlib.pyplot as plt
+import matplotlib
 import shutil
 import tensorflow.compat.v2 as tf
 
@@ -15,8 +15,22 @@ tf.enable_v2_behavior()
 
 columns = shutil.get_terminal_size().columns
 parser = argparse.ArgumentParser(
-    description='Plot confidence for CSV file.',
+    description='Plot confidence, mean and signal values for CSV file.',
     formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=columns, width=columns),
+)
+parser.add_argument(
+    '-d',
+    '--device',
+    dest='device',
+    default=bmf.Script.device_default,
+    help='use this device e.g. CPU:0, GPU:0, GPU:1 (default: {})'.format(bmf.Script.device_default),
+)
+parser.add_argument(
+    '-w',
+    '--write-svg',
+    dest='write_svg',
+    metavar='SVG_PATH',
+    help='write plots as SVGs using this filepath. this string must contain \'%%name%%\''
 )
 parser.add_argument(
     dest='file',
@@ -24,7 +38,6 @@ parser.add_argument(
     metavar='FILENAME',
     help='Filename to plot'
 )
-
 args = parser.parse_args()
 
 
@@ -38,7 +51,7 @@ def param(row_, a_idx_, p_idx_):
 
 def plots(row_):
     data_ = {}
-    for a_idx_, amplitude_latex_name_ in enumerate(bmf.coeffs.amplitude_latex_names):
+    for a_idx_ in range(bmf.coeffs.amplitude_count):
         alpha = param(row_, a_idx_, 0)
         beta = param(row_, a_idx_, 1)
         gamma = param(row_, a_idx_, 2)
@@ -46,11 +59,20 @@ def plots(row_):
         if alpha.numpy() == 0.0 and beta.numpy() == 0.0 and gamma.numpy() == 0.0:
             continue
 
-        data_[amplitude_latex_name_] = alpha + (beta * q2_range) + (gamma / q2_range)
+        data_[bmf.coeffs.amplitude_names[a_idx_]] = alpha + (beta * q2_range) + (gamma / q2_range)
+
     return data_
 
 
-with bmf.Script(device=None) as script:
+with bmf.Script(device=args.device) as script:
+    if args.write_svg is not None:
+        matplotlib.use('SVG')
+
+    # Import these after we optionally set SVG backend - otherwise matplotlib may bail on a missing TK backend when
+    #  running from the CLI
+    import matplotlib.pylab as plt
+    import seaborn as sns
+
     q2_range = tf.linspace(bmf.signal.q2_min, bmf.signal.q2_max, 200)
 
     # Load data
@@ -63,16 +85,23 @@ with bmf.Script(device=None) as script:
         data_plots = {}
         for row in reader:
             p = plots(row)
-            for amplitude_latex_name, plot in plots(row).items():
-                if amplitude_latex_name not in data_plots:
-                    data_plots[amplitude_latex_name] = []
-                data_plots[amplitude_latex_name].append(plot)
+            for amplitude_name, plot in plots(row).items():
+                if amplitude_name not in data_plots:
+                    data_plots[amplitude_name] = []
+                data_plots[amplitude_name].append(plot)
 
     # Plot each amplitude
-    for amplitude_latex_name in signal_plots:
+    for amplitude_name in signal_plots.keys():
+        amplitude_latex_name = bmf.coeffs.amplitude_latex_names[bmf.coeffs.amplitude_names.index(amplitude_name)]
+        signal = signal_plots[amplitude_name]
+        data = data_plots[amplitude_name]
+
+        plt.figure()
+        sns.set(style='ticks')
+
         plt.title(amplitude_latex_name)
 
-        tensor_data = tf.stack(data_plots[amplitude_latex_name], axis=0)
+        tensor_data = tf.stack(data, axis=0)
 
         mean = tf.reduce_mean(tensor_data, axis=0)
         plt.plot(q2_range.numpy(), mean.numpy(), color='magenta', label='mean')
@@ -113,12 +142,12 @@ with bmf.Script(device=None) as script:
             if this_max > amplitude_max:
                 amplitude_max = this_max
 
-        plt.fill_between(q2_range.numpy(), min_95, max_95, label='95%', color='yellow')
+        plt.fill_between(q2_range.numpy(), min_95, max_95, label='95%', color='lightblue')
         plt.fill_between(q2_range.numpy(), min_68, max_68, label='68%', color='lightgreen')
 
         plt.plot(
             q2_range.numpy(),
-            signal_plots[amplitude_latex_name].numpy(),
+            signal.numpy(),
             color='black', label='signal', linestyle=':'
         )
 
@@ -127,4 +156,9 @@ with bmf.Script(device=None) as script:
 
         plt.xlabel(r'$q^2 / (GeV^2/c^4)$')
         plt.legend()
-        plt.show()
+        if args.write_svg is not None:
+            filepath = args.write_svg.replace('%name%', amplitude_name)
+            bmf.stdout('Writing {}'.format(filepath))
+            plt.savefig(filepath, format="svg")
+        else:
+            plt.show()

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-
+"""Plot Q test statistics"""
 import argparse
 import io
 import math
-import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import shutil
 import tensorflow.compat.v2 as tf
@@ -13,8 +13,9 @@ import b_meson_fit as bmf
 tf.enable_v2_behavior()
 
 
-def load_txt_file(filepath):
-    handle = io.open(filepath)
+def load_txt_file(txt_path):
+    """Return list of Q stats from file"""
+    handle = io.open(txt_path)
     lines = list(handle)
     handle.close()
     return list(map(lambda line: float(line.strip()), lines))
@@ -41,19 +42,37 @@ parser.add_argument(
     help='Number of histogram bins (default: 100)',
 )
 parser.add_argument(
-    dest='txt_files',
-    type=str,
-    nargs=2,
-    metavar='SM_FILENAME NP_FILENAME',
-    help='Filenames to plot'
+    dest='sm_filepath',
+    metavar='SM_FILEPATH',
+    help='Path to SM txt file'
+)
+parser.add_argument(
+    dest='np_filepath',
+    metavar='NP_FILEPATH',
+    help='Path to NP txt file'
+)
+parser.add_argument(
+    '-w',
+    '--write-svg',
+    dest='write_svg',
+    metavar='SVG_PATH',
+    help='write plot as SVG using this filepath'
 )
 
 args = parser.parse_args()
 
 with bmf.Script() as script:
+    if args.write_svg is not None:
+        matplotlib.use('SVG')
+
+    # Import these after we optionally set SVG backend - otherwise matplotlib may bail on a missing TK backend when
+    #  running from the CLI
+    import matplotlib.pylab as plt
+    import seaborn as sns
+
     # Load data
-    sm_data = load_txt_file(args.txt_files[0])
-    np_data = load_txt_file(args.txt_files[1])
+    sm_data = load_txt_file(args.sm_filepath)
+    np_data = load_txt_file(args.np_filepath)
 
     # Max _/+ x-axis scale (Rounded up to nearest 25)
     combined_data = sm_data + np_data
@@ -76,6 +95,9 @@ with bmf.Script() as script:
     sm_stddev = np.std(sm_data)
     sigma_level = (sm_mean - np_median) / sm_stddev
     bmf.stdout('mean: {} stddev: {} sigma level: {}'.format(sm_mean, sm_stddev, sigma_level))
+
+    plt.figure()
+    sns.set(style='ticks')
 
     # Blue open circles for SM data. Don't plot 0 values
     plt.scatter(x_list, [np.nan if x == 0 else x for x in sm_hist[0]], facecolors='none', edgecolors='b')
@@ -108,6 +130,12 @@ with bmf.Script() as script:
     plt.xlabel('Q')
     plt.ylabel('Fraction / bin')
     plt.yscale('log')
-    plt.show()
+
+    if args.write_svg is not None:
+        filepath = args.write_svg
+        bmf.stdout('Writing {}'.format(filepath))
+        plt.savefig(filepath, format="svg")
+    else:
+        plt.show()
 
 

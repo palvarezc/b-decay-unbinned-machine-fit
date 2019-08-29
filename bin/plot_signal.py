@@ -43,6 +43,7 @@ parser.add_argument(
     '-w',
     '--write-svg',
     dest='write_svg',
+    metavar='SVG_PATH',
     help='write plots as SVGs using this filepath. this string must contain \'%%name%%\''
 )
 args = parser.parse_args()
@@ -69,6 +70,8 @@ with bmf.Script(device=args.device) as script:
     ]
     for events, name, latex_name in zip(signal_events.numpy().transpose(), names, latex_names):
         plt.figure()
+        sns.set(style='ticks')
+
         sns.kdeplot(events, shade=True, cut=0)
 
         if name == 'phi':
@@ -92,6 +95,6 @@ with bmf.Script(device=args.device) as script:
         if args.write_svg is not None:
             filepath = args.write_svg.replace('%name%', name)
             bmf.stdout('Writing {}'.format(filepath))
-            plt.savefig(args.write_svg.replace('%name%', name), format="svg")
+            plt.savefig(filepath, format="svg")
         else:
             plt.show()

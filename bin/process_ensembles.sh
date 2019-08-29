@@ -30,8 +30,12 @@ done
 for csv in $(find results/ -name 'fit-*.csv')
 do
     info=${csv:12:-4}
+    model=$(echo "${info}" | cut -d '_' -f 1)
+    model_len=$(echo -n "${model}" | wc -c)
+    info_wo_model=${info:$((${model_len} + 1))}
+
     ./bin/plot_confidence.py \
-        --write-svg "results/confidence-${info}-%name%.svg" \
+        --write-svg "results/confidence-${model}-%name%-${info_wo_model}.svg" \
         ${csv}
 done
 

@@ -2,17 +2,11 @@
 """Fit amplitude coefficients to signal events"""
 
 import argparse
-import os
 import shutil
 import tensorflow.compat.v2 as tf
 import tqdm
 
 import b_meson_fit as bmf
-
-# Only do plots if running PyCharm
-if 'PYCHARM_HOSTED' in os.environ:
-    import matplotlib.pylab as plt
-    import seaborn as sns
 
 tf.enable_v2_behavior()
 
@@ -178,21 +172,6 @@ with bmf.Script(device=args.device) as script:
         script.timer_start('fit')
 
         signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
-
-        # If running if PyCharm, plot our signal distributions for each independent variable
-        if 'PYCHARM_HOSTED' in os.environ:
-            fig, axes = plt.subplots(nrows=2, ncols=2)
-            fig.suptitle('Signal (Iteration {}/{})'.format(iteration, args.iterations))
-            titles = [
-                r'$q^2$',
-                r'$\cos{\theta_k}$',
-                r'$\cos{\theta_l}$',
-                r'$\phi$'
-            ]
-            for ax, feature, title in zip(axes.flatten(), signal_events.numpy().transpose(), titles):
-                sns.distplot(feature, ax=ax, bins=20)
-                ax.set(title=title)
-            plt.show()
 
         attempt = 1
         converged = False

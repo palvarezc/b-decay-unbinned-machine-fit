@@ -61,7 +61,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-with bmf.Script() as script:
+with bmf.Script(device=args.device) as script:
     if args.write_svg is not None:
         matplotlib.use('SVG')
 

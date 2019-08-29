@@ -64,6 +64,7 @@ with bmf.Script(device=args.device) as script:
     plt.plot(masses.numpy() * 1000, mix.numpy(), label=r'$K^*_0(892)/K^*_0(700)$')
     plt.xlabel('Mass / MeV')
     plt.ylabel('Absolute value')
+    plt.margins(x=0)
     plt.legend()
     if args.write_svg is not None:
         filepath = args.write_svg

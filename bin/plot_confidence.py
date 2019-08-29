@@ -155,6 +155,7 @@ with bmf.Script(device=args.device) as script:
             plt.ylim(-amplitude_max * 1.1, amplitude_max * 1.1)
 
         plt.xlabel(r'$q^2 / (GeV^2/c^4)$')
+        plt.margins(x=0)
         plt.legend()
         if args.write_svg is not None:
             filepath = args.write_svg.replace('%name%', amplitude_name)

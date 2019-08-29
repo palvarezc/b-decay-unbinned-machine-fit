@@ -64,6 +64,7 @@ with bmf.Script(device=args.device) as script:
     plt.plot(q2.numpy(), decay_rate_angle_integrated_p_wave.numpy(), label='P-wave')
     plt.plot(q2.numpy(), decay_rate_angle_integrated_s_wave.numpy(), label='S-wave')
     plt.xlabel(r'$q^2 / (GeV^2/c^4)$')
+    plt.margins(x=0)
     plt.legend()
     if args.write_svg is not None:
         filepath = args.write_svg

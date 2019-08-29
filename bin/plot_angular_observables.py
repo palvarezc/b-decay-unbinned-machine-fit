@@ -85,6 +85,7 @@ with bmf.Script(device=args.device) as script:
         sns.set(style='ticks')
 
         plt.plot(q2.numpy(), values.numpy())
+        plt.margins(x=0)
         plt.title(latex_name)
         plt.xlabel(r'$q^2 / (GeV^2 / c^4)$')
         if args.write_svg is not None:

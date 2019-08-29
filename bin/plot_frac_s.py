@@ -68,6 +68,7 @@ with bmf.Script(device=args.device) as script:
     plt.plot(q2.numpy(), modulus_frac_s.numpy(), label='modulus')
     plt.xlabel(r'$q^2 / (GeV^2 / c^4)$')
     plt.ylabel(r'$F_s$')
+    plt.margins(x=0)
     plt.legend()
     if args.write_svg is not None:
         filepath = args.write_svg

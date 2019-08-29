@@ -39,6 +39,8 @@ parser.add_argument(
     help='Filename to plot'
 )
 args = parser.parse_args()
+if args.write_svg and '%name%' not in args.write_svg:
+    parser.error('-w/--write-svg must contain \'%name%\'')
 
 
 def param(row_, a_idx_, p_idx_):

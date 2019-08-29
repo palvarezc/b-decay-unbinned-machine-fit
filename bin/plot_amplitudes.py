@@ -40,6 +40,8 @@ parser.add_argument(
     help='write plots as SVGs using this filepath. this string must contain \'%%name%%\''
 )
 args = parser.parse_args()
+if args.write_svg and '%name%' not in args.write_svg:
+    parser.error('-w/--write-svg must contain \'%name%\'')
 
 with bmf.Script(device=args.device) as script:
     if args.write_svg is not None:

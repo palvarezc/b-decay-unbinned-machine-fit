@@ -18,7 +18,9 @@ def fit_init_value(arg):  # Handle --fit-init argument
     try:
         init_value = float(arg)
     except ValueError:
-        raise ValueError('{} is not one of '.format(bmf.coeffs.fit_init_schemes + ['FLOAT']))
+        raise argparse.ArgumentTypeError(
+            '{} is not one of {}'.format(arg, ",".join(bmf.coeffs.fit_init_schemes + ['FLOAT']))
+        )
     return init_value
 
 

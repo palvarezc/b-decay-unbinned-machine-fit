@@ -16,6 +16,7 @@ mass_mu = tf.constant(0.1056583745)  # in 0.106 GeV/c^2
 integration_dt = tf.constant(0.0025)
 
 # Integrated BW distributions to apply to amplitudes
+# TODO: Lazily import these so they're not calculated when this file is loaded
 bw_k700 = bmfbw.k700_distribution_integrated()
 bw_k892 = bmfbw.k892_distribution_integrated()
 bw_k700_k892 = bmfbw.k700_k892_distribution_integrated()

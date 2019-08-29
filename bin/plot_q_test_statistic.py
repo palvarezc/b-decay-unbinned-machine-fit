@@ -42,6 +42,20 @@ parser.add_argument(
     help='Number of histogram bins (default: 100)',
 )
 parser.add_argument(
+    '-d',
+    '--device',
+    dest='device',
+    default=bmf.Script.device_default,
+    help='use this device e.g. CPU:0, GPU:0, GPU:1 (default: {})'.format(bmf.Script.device_default),
+)
+parser.add_argument(
+    '-w',
+    '--write-svg',
+    dest='write_svg',
+    metavar='SVG_PATH',
+    help='write plot as SVG using this filepath'
+)
+parser.add_argument(
     dest='sm_filepath',
     metavar='SM_FILEPATH',
     help='Path to SM txt file'
@@ -50,13 +64,6 @@ parser.add_argument(
     dest='np_filepath',
     metavar='NP_FILEPATH',
     help='Path to NP txt file'
-)
-parser.add_argument(
-    '-w',
-    '--write-svg',
-    dest='write_svg',
-    metavar='SVG_PATH',
-    help='write plot as SVG using this filepath'
 )
 
 args = parser.parse_args()

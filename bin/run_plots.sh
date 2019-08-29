@@ -2,6 +2,11 @@
 
 set -e
 
+log_file="results/run_plots.log"
+> ${log_file}
+exec 1> >(tee ${log_file})
+exec 2>&1
+
 ./bin/plot_breit_wigner.py --write-svg results/breit_wigner.svg
 for model in SM NP
 do
@@ -20,10 +25,16 @@ do
     ./bin/plot_signal.py \
         --signal-model ${model} \
         --write-svg "results/signal-${model}-%name%.svg"
-    ./bin/plot_confidence.py \
-        --write-svg "results/confidence-${model}-%name%.svg" \
-        results/${model}_rate-0.05_b1-def_b2-def_eps-def_fi-def.csv
 done
+
+for csv in $(find results/ -name 'fit-*.csv')
+do
+    info=${csv:12:-4}
+    ./bin/plot_confidence.py \
+        --write-svg "results/confidence-${info}-%name%.svg" \
+        ${csv}
+done
+
 for signal_count in 600 2400
 do
     ./bin/plot_q_test_statistic.py \

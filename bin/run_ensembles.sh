@@ -47,7 +47,7 @@ fit() {
     epsilon=$6
     fit_init=$7
 
-    csv="${results_dir}/${model}_rate-${rate}_b1-${beta1}_b2-${beta2}_eps-${epsilon}_fi-${fit_init}.csv"
+    csv="${results_dir}/fit-${model}_rate-${rate}_b1-${beta1}_b2-${beta2}_eps-${epsilon}_fi-${fit_init}.csv"
 
     is_run_needed "${csv}" "${iteration}" 2 || return 0
 

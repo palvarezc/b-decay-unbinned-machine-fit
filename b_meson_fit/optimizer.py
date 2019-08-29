@@ -1,5 +1,4 @@
 """Class to do optimization"""
-import numpy as np
 import tensorflow.compat.v2 as tf
 
 import b_meson_fit.coeffs as bmfc

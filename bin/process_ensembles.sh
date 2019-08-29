@@ -2,7 +2,7 @@
 
 set -e
 
-log_file="results/run_plots.log"
+log_file="results/process_ensembles.log"
 > ${log_file}
 exec 1> >(tee ${log_file})
 exec 2>&1

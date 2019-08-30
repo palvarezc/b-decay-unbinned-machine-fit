@@ -124,6 +124,8 @@ with bmf.Script(device=args.device) as script:
 
         if len(data_points[c_name]) > 1:
             plt.legend()
+        else:
+            plt.gca().get_legend().set_visible(False)
 
         if args.write_svg is not None:
             filepath = args.write_svg.replace('%name%', c_name)

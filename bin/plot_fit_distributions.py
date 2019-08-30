@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 """
-Plot fitted coefficient values for given CSV result file(s).
-
-Will also output mean, std err and pull mean for each coefficient.
+Plot fitted coefficient distributions for given CSV result file(s).
 """
 
 import argparse
@@ -30,16 +28,8 @@ def filename_and_name(arg):
 
 columns = shutil.get_terminal_size().columns
 parser = argparse.ArgumentParser(
-    description='Plot fitted coefficient values.',
+    description='Plot fitted coefficient distributions.',
     formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=columns, width=columns),
-)
-parser.add_argument(
-    '-b',
-    '--bins',
-    dest='bins',
-    type=int,
-    default=100,
-    help='Number of histogram bins (default: 100)',
 )
 parser.add_argument(
     '-d',
@@ -74,6 +64,7 @@ with bmf.Script(device=args.device) as script:
     # Import these after we optionally set SVG backend - otherwise matplotlib may bail on a missing TK backend when
     #  running from the CLI
     import matplotlib.pylab as plt
+    plt.rcParams.update({'figure.max_open_warning': 0})
     import seaborn as sns
 
     # Load inputs
@@ -121,22 +112,12 @@ with bmf.Script(device=args.device) as script:
                     )
                 )
                 color = next(colors)
-                color_darker = tuple(map(lambda c: c * 0.5, color))
+                sns.kdeplot(points, cut=0, color=color, label=name)
+                # Draw a dotted line to represent the mean
+                plt.gca().axvline(mean, color=color, linestyle=':')
 
-                # Plot fit distribution
-                sns.distplot(
-                    points,
-                    label=name,
-                    bins=args.bins,
-                    kde=False,
-                    norm_hist=True,
-                    color=color
-                )
-                # Draw a darker line to represent the mean
-                plt.gca().axvline(mean, ymax=0.25, color=color_darker)
-
-        # Draw a magenta dotted line to represent the signal
-        plt.gca().axvline(signal_coeffs[name][c_name], ymax=0.25, color='magenta', linestyle=':')
+        # Draw a magenta line to represent the signal
+        plt.gca().axvline(signal_coeffs[name][c_name], ymax=0.25, color='magenta')
 
         plt.xlabel('Fitted value')
         plt.ylabel('Density')
@@ -145,7 +126,7 @@ with bmf.Script(device=args.device) as script:
             plt.legend()
 
         if args.write_svg is not None:
-            filepath = args.write_svg.replace('%name%', name)
+            filepath = args.write_svg.replace('%name%', c_name)
             bmf.stdout('Writing {}'.format(filepath))
             plt.savefig(filepath, format="svg")
         else:

@@ -7,9 +7,15 @@ set -e
 iteration_step=250
 results_dir="results"
 
+rate_default="$(egrep '^[ ]*learning_rate_default' b_meson_fit/optimizer.py | awk -F' = ' '{print $2}')"
+beta1_default="0.90"
+beta2_default="0.999"
+eps_default="1e-08"
+
 fit_iterations_max=1000
 fit_models="SM NP"
 fit_rates="0.05 0.10 0.15 0.20"
+# Defaults are excluded from below
 fit_beta1s="0.85 0.95"
 fit_beta2s="0.995 0.9995"
 fit_epsilons="1e-03 1e-05"
@@ -47,9 +53,12 @@ fit() {
     epsilon=$6
     fit_init=$7
 
-    csv="${results_dir}/fit-${model}_rate-${rate}_b1-${beta1}_b2-${beta2}_eps-${epsilon}_fi-${fit_init}.csv"
+    # CSV filename with default values as 'def'
+    csv_with_def=$(echo "${results_dir}/fit-${model}_rate-${rate}_b1-${beta1}_b2-${beta2}_eps-${epsilon}_fi-${fit_init}.csv" | sed "s/rate-${rate_default}/rate-def/")
+    # CSV filename with default values as their actual float value
+    csv_without_def=$(echo ${csv_with_def} | sed "s/rate-def/rate-${rate_default}/" | sed "s/b1-def/b1-${beta1_default}/" | sed "s/b2-def/b2-${beta2_default}/" | sed "s/eps-def/eps-${eps_default}/")
 
-    is_run_needed "${csv}" "${iteration}" 2 || return 0
+    is_run_needed "${csv_without_def}" "${iteration}" 2 || continue
 
     opts=""
     if [[ "${rate}" != "def" ]]; then
@@ -68,7 +77,14 @@ fit() {
         opts="${opts} --fit-init ${fit_init}"
     fi
 
-    ./bin/fit.py ${opts} --csv ${csv} --iteration ${iteration} --signal-model ${model}
+    ./bin/fit.py ${opts} --csv ${csv_without_def} --iteration ${iteration} --signal-model ${model}
+
+    # If we're using any defaults then create a symlink to a filename with values replaced with 'def' to make
+    #  post-processing easier
+    if [[ "${csv_with_def}" != "${csv_without_def}" ]]; then
+        ln -sf $(echo ${csv_without_def} | cut -d '/' -f 2) ${csv_with_def}
+    fi
+
     echo
 }
 
@@ -90,6 +106,7 @@ do
         do
                 fit ${iteration} ${model} def ${beta1} def def def
         done
+
         for beta2 in ${fit_beta2s}
         do
                 fit ${iteration} ${model} def def ${beta2} def def

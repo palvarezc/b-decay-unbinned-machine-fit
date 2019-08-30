@@ -2,7 +2,7 @@
 # This is a quick and dirty bash script that generates all data for publication
 # Output files are built up in stripes so that some data is available to use quickly
 
-set -e
+set -o errexit
 
 iteration_step=250
 results_dir="results"
@@ -23,6 +23,14 @@ fit_epsilons="1e-03 1e-05"
 q_stat_iterations_max=5000
 q_stat_models="SM NP"
 q_stat_signal_counts="600 2400"
+
+run() {
+    echo "**************"
+    echo "$@"
+    "$@"
+    echo "**************"
+    echo
+}
 
 is_run_needed() {
     filename=$1
@@ -58,7 +66,7 @@ fit() {
     # CSV filename with default values as their actual float value
     csv_without_def=$(echo ${csv_with_def} | sed "s/rate-def/rate-${rate_default}/" | sed "s/b1-def/b1-${beta1_default}/" | sed "s/b2-def/b2-${beta2_default}/" | sed "s/eps-def/eps-${eps_default}/")
 
-    is_run_needed "${csv_without_def}" "${iteration}" 2 || continue
+    is_run_needed "${csv_without_def}" "${iteration}" 2 || return 0
 
     opts=""
     if [[ "${rate}" != "def" ]]; then
@@ -77,7 +85,7 @@ fit() {
         opts="${opts} --fit-init ${fit_init}"
     fi
 
-    ./bin/fit.py ${opts} --csv ${csv_without_def} --iteration ${iteration} --signal-model ${model}
+    run ./bin/fit.py ${opts} --csv ${csv_without_def} --iteration ${iteration} --signal-model ${model}
 
     # If we're using any defaults then create a symlink to a filename with values replaced with 'def' to make
     #  post-processing easier
@@ -129,7 +137,7 @@ do
         do
             txt="${results_dir}/q_test_stat-${signal_count}-${dataset_model}.txt"
             is_run_needed "${txt}" "${iteration}" 0 || continue
-            ./bin/q_test_statistic.py \
+            run ./bin/q_test_statistic.py \
                 --txt ${txt} \
                 --iteration ${iteration} \
                 --signal-count ${signal_count} \

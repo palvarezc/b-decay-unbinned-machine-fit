@@ -160,25 +160,32 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 Cleanup:
 
-* Get scripts to output plots for scientific publication. Make plotting work in PyCharm and at CLI.
-* Cleanup plotters/write docs
-
-* Lazy importing for BW?
+* Change q test script to write a CSV including all S-wave coeffs and nlls
 * Make CSV reading into module/write tests.
 * Split signal.py into other files (e.g. observables, decay_rate). Sort coeffs vs amplitudes params.
 * Check/complete all docstrings
-* Split signal plotting into separate file
-* Centralise/merge fit.py/q_test_statistic.py
-* Rename/document all scripts
-* Add warnings to docs about adding/changing signal coefficients & the effect on "largest" initialization
+* Potentially combine plotters into single script
 * Test all scripts/unit tests
 * Ensure default optimizer params are sensible
+* Document other scripts
+* Document plotting
 * Document commands for how data and figures were generated for report
 * Put paper in repo
+* Check Further Work
 
-Further:
+Fixes needed:
 
-* Add real signal values for a_00_l and a_00_r.
+* Change signal coefficient values to ones that produce correct shaped observable plots
+* Replace a_00_* signal coefficient values with proper values 
+* If a fit is partially written to a CSV, the signal coeffients are changed, and then the fit is resumed, the fitting
+script will rightly complain about the change and refuse to continue. However if the TWICE_LARGEST_SIGNAL_SAME_SIGN
+algorithm is being used and either another signal model is added or another signal model is changed, then when resuming
+the fit script won't notice if the coefficient initialisation values are different to what they were when the ensemble
+started. One way of fixing this would be to write an extra header row in the CSV to say what the initialisation values
+were when first started. The fit script could either continue using those, or refuse to start if they're different.
+
+Further work:
+
 * Tune the optimizer better to improve fitting performance and quality.
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
 and fitting based on nuisance parameters for those polynomials.

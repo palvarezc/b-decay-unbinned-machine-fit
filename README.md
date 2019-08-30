@@ -160,11 +160,9 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 Cleanup:
 
-* Change q test script to write a CSV including all S-wave coeffs and nlls
 * Make CSV reading into module/write tests.
 * Split signal.py into other files (e.g. observables, decay_rate). Sort coeffs vs amplitudes params.
 * Check/complete all docstrings
-* Potentially combine plotters into single script
 * Test all scripts/unit tests
 * Ensure default optimizer params are sensible
 * Document other scripts
@@ -177,7 +175,7 @@ Fixes needed:
 
 * Change signal coefficient values to ones that produce correct shaped observable plots
 * Replace a_00_* signal coefficient values with proper values 
-* If a fit is partially written to a CSV, the signal coeffients are changed, and then the fit is resumed, the fitting
+* If a fit is partially written to a CSV, the signal coefficients are changed, and then the fit is resumed, the fitting
 script will rightly complain about the change and refuse to continue. However if the TWICE_LARGEST_SIGNAL_SAME_SIGN
 algorithm is being used and either another signal model is added or another signal model is changed, then when resuming
 the fit script won't notice if the coefficient initialisation values are different to what they were when the ensemble
@@ -189,3 +187,9 @@ Further work:
 * Tune the optimizer better to improve fitting performance and quality.
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
 and fitting based on nuisance parameters for those polynomials.
+
+Potential cleanups:
+
+* Change [q_test_statistic.py](./bin/q_test_statistic.py) to output a CSV file instead of a txt file that contains
+all S-wave coefficients and nlls as well as the Q statistics
+* Combine plotters into single script

@@ -165,6 +165,13 @@ That directory is almost certainly different in other Linux distributions.
 
 Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you will get a blank page.
 
+## Publication Data
+
+Data was generated for publication by running the [generate\_data.sh](./bin/generate_data.sh) bash script.
+
+Values and plots were subsequently mined by the [process\_data.sh](./bin/process_data.sh) bash script. This
+script will log to the file `results/process_data.log` so that outputted values of interest can be later found.
+
 ## Misc scripts
 
 The other scripts take no arguments and do the following:
@@ -193,7 +200,7 @@ Fixes needed:
 * Change signal coefficient values to ones that produce correct shaped observable plots (see paper)
 * Replace a_00_* signal coefficient values with proper values (see paper)
 * If a fit is partially written to a CSV, the signal coefficients are changed, and then the fit is resumed, the fitting
-script will rightly complain about the change and refuse to continue. However if the TWICE_LARGEST_SIGNAL_SAME_SIGN
+script will rightly complain about the change and refuse to continue. However if the TWICE\_LARGEST\_SIGNAL\_SAME\_SIGN
 algorithm is being used and either another signal model is added or another signal model is changed, then when resuming
 the fit script won't notice if the coefficient initialisation values are different to what they were when the ensemble
 started. One way of fixing this would be to write an extra header row in the CSV to say what the initialisation values

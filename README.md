@@ -26,6 +26,15 @@ This software has been developed on Linux with Python 3.6 and the [PyCharm](http
 The unit tests and scripts should just run within PyCharm with no configuration necessary. Whilst none of this software
 has been tested on Windows, there aren't any known reasons why it wouldn't run.
 
+The first time scripts are run it may take a long time to start when using the GPU as CUDA creates its compute cache.
+Subsequent runs should all start faster.
+
+Unit tests can be run from the CLI by running the following from the project folder:
+
+```
+$ python -m unittest
+```
+
 ## Fitting
 
 The script [fit.py](./bin/fit.py) can be used to run a fitting ensemble. The fits will start with random coefficients

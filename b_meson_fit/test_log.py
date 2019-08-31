@@ -14,14 +14,15 @@ class TestLog(unittest.TestCase):
     def test_log_paths(self):
         """Check Log returns expected paths"""
         log_inst = log.Log('unittest')
+        project_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
 
         self.assertEqual(
-            os.path.realpath('../logs/unittest/20101112-131415'),
+            os.path.realpath(os.path.join(project_dir, 'logs', 'unittest', '20101112-131415')),
             os.path.realpath(log_inst.dir())
         )
 
         self.assertEqual(
-            os.path.realpath('../logs/unittest/20101112-131415/somesuffix'),
+            os.path.realpath(os.path.join(project_dir, 'logs', 'unittest', '20101112-131415', 'somesuffix')),
             os.path.realpath(log_inst.dir('somesuffix'))
         )
 

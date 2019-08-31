@@ -2,7 +2,10 @@
 """
 Plot each coefficient vs. negative log likelihood whilst keeping other coefficients fixed at signal values.
 
-The blue curve is the likelihood curve. The red line denotes the true signal value.
+The blue curve is the "likelihood" curve. Likelihood is in quote marks as a true likelihood plot should let the other
+coefficients be determined by a fit for each point in the scan.
+
+The red line denotes the true signal value.
 
 Used to test that all coefficients show minimums in correct places.
 """

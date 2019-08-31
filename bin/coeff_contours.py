@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
-Plot negative log likelihood surface for two coefficients whilst keeping others fixed at signal values.
+Plot negative log "likelihood" surface for two coefficients whilst keeping others fixed at signal values.
+
+Likelihood is in quote marks as a true likelihood plot should let the other coefficients be determined by a fit
+for each point in the scan.
 
 The red lines mark the true signal values
 

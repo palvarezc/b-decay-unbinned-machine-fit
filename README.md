@@ -156,6 +156,27 @@ That directory is almost certainly different in other Linux distributions.
 
 Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you will get a blank page.
 
+## Misc scripts
+
+The other scripts take no arguments and do the following:
+
+* [benchmark.py](./bin/benchmark.py): Tests speed of key fit functions. Frequently used to test for performance 
+regressions during development. You should run this before and after modifying PDF terms as Tensorflow's 
+[autograph](https://www.tensorflow.org/guide/autograph) can be quite particular
+* [coeff\_contours.py](./bin/coeff_contours.py): Produces a surface plot of the negative log likelihood by scanning
+over two coefficients whilst keeping the rest at signal values. Used during early development to ensure minima
+existed. To change the two coefficients plotted, change the `cx_idx` and `cy_idx` IDs in that file.
+* [coeff\_curves.py](./bin/coeff_curves.py): Produces plots of the negative log likelihood for each coefficient by
+scanning them whilst keeping the rest at signal values. Used during early development to ensure minima existed.
+* [compare\_optimizers.py](./bin/compare_optimizers.py): Takes combinations of optimizer algorithms and parameters
+defined in the `combos` variable in that file and logs the fits for viewing in Tensorboard. Useful for picking
+macro machine learning options (e.g. which optimizer to use). For more subtle settings an ensemble fit should be
+performed instead as [compare\_optimizers.py](./bin/compare_optimizers.py) fixes all initial coefficients to `1.0`
+so that comparison is possible - which isn't very realistic.
+* [table\_signal\_coeffs.py](./bin/table_signal_coeffs.py): Output the LaTeX for a table of all the coefficient values.
+Used for publication.
+
+
 ## Roadmap
 
 Fixes needed:
@@ -178,9 +199,10 @@ and fitting based on nuisance parameters for those polynomials.
 Potential cleanups:
 
 * Move uses of `csv.DictReader` into a CSV reader class
-* Split `signal.py` into other files (e.g. `observables.py`, `decay_rate.py`). Address the fact that some of those 
-functions take a flat coefficient list but others take amplitudes (the  3 `decay_rate_angle_integrated*()` functions
-are a good example of this inconsistency) without negatively affecting fit performance
+* Split `signal.py` into other files (e.g. `observables.py`, `decay_rate.py`). Without negatively affecting fit
+performance, address the fact that some of those  functions take a flat coefficient list but others take amplitudes
+(the  3 `decay_rate_angle_integrated*()` functions are a good example of this inconsistency as can be seen
+in `plot_frac_s.py`)
 * Change [q_test_statistic.py](./bin/q_test_statistic.py) to output a CSV file instead of a txt file that contains
 all S-wave coefficients and nlls as well as the Q statistics
 * Combine plotters into single script

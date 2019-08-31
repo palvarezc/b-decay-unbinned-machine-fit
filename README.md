@@ -158,23 +158,10 @@ Note that the Profile tab in Tensorboard only works in Chrome. In Firefox you wi
 
 ## Roadmap
 
-Cleanup:
-
-* Make CSV reading into module/write tests.
-* Split signal.py into other files (e.g. observables, decay_rate). Sort coeffs vs amplitudes params.
-* Check/complete all docstrings
-* Test all scripts/unit tests
-* Ensure default optimizer params are sensible
-* Document other scripts
-* Document plotting
-* Document commands for how data and figures were generated for report
-* Put paper in repo
-* Check Further Work
-
 Fixes needed:
 
-* Change signal coefficient values to ones that produce correct shaped observable plots
-* Replace a_00_* signal coefficient values with proper values 
+* Change signal coefficient values to ones that produce correct shaped observable plots (see paper)
+* Replace a_00_* signal coefficient values with proper values (see paper)
 * If a fit is partially written to a CSV, the signal coefficients are changed, and then the fit is resumed, the fitting
 script will rightly complain about the change and refuse to continue. However if the TWICE_LARGEST_SIGNAL_SAME_SIGN
 algorithm is being used and either another signal model is added or another signal model is changed, then when resuming
@@ -190,6 +177,10 @@ and fitting based on nuisance parameters for those polynomials.
 
 Potential cleanups:
 
+* Move uses of `csv.DictReader` into a CSV reader class
+* Split `signal.py` into other files (e.g. `observables.py`, `decay_rate.py`). Address the fact that some of those 
+functions take a flat coefficient list but others take amplitudes (the  3 `decay_rate_angle_integrated*()` functions
+are a good example of this inconsistency) without negatively affecting fit performance
 * Change [q_test_statistic.py](./bin/q_test_statistic.py) to output a CSV file instead of a txt file that contains
 all S-wave coefficients and nlls as well as the Q statistics
 * Combine plotters into single script

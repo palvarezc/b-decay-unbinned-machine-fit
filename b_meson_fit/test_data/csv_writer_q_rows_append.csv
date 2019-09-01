@@ -1,0 +1,4 @@
+id,test_a_00_l_re_alpha,test_a_00_l_re_beta,test_a_00_l_re_gamma,test_a_00_l_im_alpha,test_a_00_l_im_beta,test_a_00_l_im_gamma,test_a_00_r_re_alpha,test_a_00_r_re_beta,test_a_00_r_re_gamma,test_a_00_r_im_alpha,test_a_00_r_im_beta,test_a_00_r_im_gamma,test_nll,null_a_00_l_re_alpha,null_a_00_l_re_beta,null_a_00_l_re_gamma,null_a_00_l_im_alpha,null_a_00_l_im_beta,null_a_00_l_im_gamma,null_a_00_r_re_alpha,null_a_00_r_re_beta,null_a_00_r_re_gamma,null_a_00_r_im_alpha,null_a_00_r_im_beta,null_a_00_r_im_gamma,null_nll,q,time_taken
+1,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,12.34,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,23.45,34.56,45.67
+2,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,23.45,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,34.56,45.67,56.78
+3,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,34.56,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,45.67,56.78,67.89

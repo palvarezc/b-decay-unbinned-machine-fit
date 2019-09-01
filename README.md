@@ -115,8 +115,8 @@ $ ./bin/fit.py -u 1e-8
 The script [q_test_statistic.py](./bin/q_test_statistic.py) can be used to generate Q test statistics. The script
 allows all options that [fit.py](./bin/fit.py) does.
 
-Additionally the `-n`/`--null-model` and  `-t`/`--test-model`. These specify which signal coefficient model the P-wave
-fit coefficients should be fixed to for the null and test hypotheses respectively.
+Additionally the `-n`/`--null-model` and  `-t`/`--test-model` arguments are mandatory. These specify which
+signal coefficient model the P-wave fit coefficients should be fixed to for the null and test hypotheses respectively.
 
 An example usage is:
 

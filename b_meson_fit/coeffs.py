@@ -215,7 +215,7 @@ def fit(initialization=fit_initialization_scheme_default, current_signal_model=N
                 # Initialize coefficient to the specified value (Useful for testing)
                 init_value = initialization
             else:
-                raise ValueError('Initialization scheme {} in undefined'.format(initialization))
+                raise ValueError('Initialization scheme {} is undefined'.format(initialization))
 
             coeff = tf.Variable(init_value, name=names[i])
         else:

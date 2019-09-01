@@ -21,7 +21,7 @@ with bmf.Script() as script:
 
     signal_coeffs = bmf.coeffs.signal(bmf.coeffs.SM)
     optimizer = bmf.Optimizer(
-        bmf.coeffs.fit(signal_coeffs),
+        bmf.coeffs.fit(),
         bmf.signal.generate(signal_coeffs),
     )
 

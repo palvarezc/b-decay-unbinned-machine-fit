@@ -2,7 +2,6 @@
 """Generate Q test statistics"""
 
 import argparse
-import os
 import shutil
 import tensorflow.compat.v2 as tf
 import tqdm
@@ -28,6 +27,12 @@ columns = shutil.get_terminal_size().columns
 parser = argparse.ArgumentParser(
     description='Generate Q test statistics for a signal model.',
     formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=columns, width=columns),
+)
+parser.add_argument(
+    '-c',
+    '--csv',
+    dest='csv_file',
+    help='write results to this CSV file'
 )
 parser.add_argument(
     '-d',
@@ -136,13 +141,6 @@ parser.add_argument(
     help='fix test P-wave fit coeffs to the values in this signal model'
 )
 parser.add_argument(
-    '-x',
-    '--txt',
-    dest='txt_file',
-    required=True,
-    help='write results to this txt file'
-)
-parser.add_argument(
     '-u',
     '--grad-max-cutoff',
     dest='grad_max_cutoff',
@@ -171,54 +169,64 @@ with bmf.Script(device=args.device) as script:
 
     signal_coeffs = bmf.coeffs.signal(args.signal_model)
 
-    if os.path.isfile(args.txt_file):
-        num_lines = sum(1 for line in open(args.txt_file))
-        bmf.stdout('{} already contains {} iteration(s)'.format(args.txt_file, num_lines))
-        bmf.stdout('')
-        if num_lines >= args.iterations:
-            bmf.stderr('Nothing to do')
-            exit(0)
-        iteration = num_lines
+    if args.csv_file is not None:
+        writer = bmf.QWriter(args.csv_file)
+        if writer.current_id > 0:
+            bmf.stdout('{} already contains {} iteration(s)'.format(args.csv_file, writer.current_id))
+            bmf.stdout('')
+            if writer.current_id >= args.iterations:
+                bmf.stderr('Nothing to do')
+                exit(0)
+            iteration = writer.current_id
 
-    with open(args.txt_file, 'a') as txt_file:
-        # Show progress bar for statistics
-        for iteration in tqdm.trange(
-                iteration + 1,
-                args.iterations + 1,
-                initial=iteration,
-                total=args.iterations,
-                unit='test stat'
-        ):
-            signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
+    # Show progress bar for statistics
+    for iteration in tqdm.trange(
+            iteration + 1,
+            args.iterations + 1,
+            initial=iteration,
+            total=args.iterations,
+            unit='test stat'
+    ):
+        # Time each iteration for CSV writing
+        script.timer_start('q')
 
-            def nll(fix_coeffs_model):
-                attempt = 1
+        signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
+
+        def nll(fix_coeffs_model):
+            attempt = 1
+            while True:
+                fit_coeffs = bmf.coeffs.fit(args.fit_init, args.signal_model, fix_coeffs_model)
+                optimizer = bmf.Optimizer(
+                    fit_coeffs,
+                    signal_events,
+                    opt_name=args.opt_name,
+                    learning_rate=args.learning_rate,
+                    opt_params=opt_params,
+                    grad_clip=args.grad_clip,
+                    grad_max_cutoff=args.grad_max_cutoff
+                )
+
                 while True:
-                    fit_coeffs = bmf.coeffs.fit(args.fit_init, args.signal_model, fix_coeffs_model)
-                    optimizer = bmf.Optimizer(
-                        fit_coeffs,
-                        signal_events,
-                        opt_name=args.opt_name,
-                        learning_rate=args.learning_rate,
-                        opt_params=opt_params,
-                        grad_clip=args.grad_clip,
-                        grad_max_cutoff=args.grad_max_cutoff
-                    )
+                    optimizer.minimize()
+                    if args.log:
+                        log.coefficients('q_test_stat_{}'.format(iteration), optimizer, signal_coeffs)
+                    if optimizer.converged():
+                        # Multiply the normalized_nll up into the full nll
+                        return fit_coeffs, optimizer.normalized_nll * args.signal_count
+                    if optimizer.step >= args.max_step:
+                        bmf.stderr('No convergence after {} steps. Restarting iteration'.format(args.max_step))
+                        attempt = attempt + 1
+                        break
 
-                    while True:
-                        optimizer.minimize()
-                        if args.log:
-                            log.coefficients('q_test_stat_{}'.format(iteration), optimizer, signal_coeffs)
-                        if optimizer.converged():
-                            # Multiply the normalized_nll up into the full nll
-                            return optimizer.normalized_nll * args.signal_count
-                        if optimizer.step >= args.max_step:
-                            bmf.stderr('No convergence after {} steps. Restarting iteration'.format(args.max_step))
-                            attempt = attempt + 1
-                            break
-
-            test_nll = nll(args.test_model)
-            null_nll = nll(args.null_model)
-            q = 2 * (test_nll - null_nll)
-
-            txt_file.write('{}\n'.format(q))
+        test_coeffs, test_nll = nll(args.test_model)
+        null_coeffs, null_nll = nll(args.null_model)
+        q = 2 * (test_nll - null_nll)
+        if args.csv_file is not None:
+            writer.write_q(
+                test_coeffs,
+                test_nll.numpy(),
+                null_coeffs,
+                null_nll.numpy(),
+                q.numpy(),
+                script.timer_elapsed('q')
+            )

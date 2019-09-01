@@ -113,20 +113,16 @@ $ ./bin/fit.py -u 1e-8
 ## Q test statistic
 
 The script [q_test_statistic.py](./bin/q_test_statistic.py) can be used to generate Q test statistics. The script
-allows all options that [fit.py](./bin/fit.py) does except the `-c` or `--csv` options.
+allows all options that [fit.py](./bin/fit.py) does.
 
-Additionally the `-n`/`--null-model`, `-t`/`--test-model` and `-x`/`--txt` options are required.
-
-The `--null-model` and `--test-model` specifies which signal coefficient model the P-wave fit coefficients
-should be fixed to for the null and test hypotheses respectively.
-
-The `--txt` option specifies an output txt file to write to.
+Additionally the `-n`/`--null-model` and  `-t`/`--test-model`. These specify which signal coefficient model the P-wave
+fit coefficients should be fixed to for the null and test hypotheses respectively.
 
 An example usage is:
 
 ```
-$ ./bin/q_test_statistic.py -x Q_NP.txt -i 1000 -S NP -t NP -n SM
-$ ./bin/q_test_statistic.py -x Q_SM.txt -i 1000 -S SM -t NP -n SM
+$ ./bin/q_test_statistic.py -c Q_NP.csv -i 1000 -S NP -t NP -n SM
+$ ./bin/q_test_statistic.py -c Q_SM.csv -i 1000 -S SM -t NP -n SM
 ```
 
 ## Using Tensorboard
@@ -219,6 +215,4 @@ Potential cleanups:
 performance, address the fact that some of those  functions take a flat coefficient list but others take amplitudes
 (the  3 `decay_rate_angle_integrated*()` functions are a good example of this inconsistency as can be seen
 in `plot_frac_s.py`)
-* Change [q_test_statistic.py](./bin/q_test_statistic.py) to output a CSV file instead of a txt file that contains
-all S-wave coefficients and nlls as well as the Q statistics
 * Combine plotters into single script

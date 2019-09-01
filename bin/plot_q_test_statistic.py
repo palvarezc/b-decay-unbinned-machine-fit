@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Plot Q test statistics"""
 import argparse
-import io
+import csv
 import math
 import matplotlib
 import numpy as np
@@ -13,12 +13,15 @@ import b_meson_fit as bmf
 tf.enable_v2_behavior()
 
 
-def load_txt_file(txt_path):
+def read_q_stats(csv_path):
     """Return list of Q stats from file"""
-    handle = io.open(txt_path)
-    lines = list(handle)
-    handle.close()
-    return list(map(lambda line: float(line.strip()), lines))
+    q_list = []
+    with open(csv_path, newline='') as csv_file:
+        reader = csv.DictReader(csv_file)
+        for row in reader:
+            q_list.append(float(row['q']))
+
+    return q_list
 
 
 def gaussian(x_list_, data):
@@ -58,12 +61,12 @@ parser.add_argument(
 parser.add_argument(
     dest='sm_filepath',
     metavar='SM_FILEPATH',
-    help='Path to SM txt file'
+    help='Path to SM CSV file'
 )
 parser.add_argument(
     dest='np_filepath',
     metavar='NP_FILEPATH',
-    help='Path to NP txt file'
+    help='Path to NP CSV file'
 )
 
 args = parser.parse_args()
@@ -78,8 +81,8 @@ with bmf.Script(device=args.device) as script:
     import seaborn as sns
 
     # Load data
-    sm_data = load_txt_file(args.sm_filepath)
-    np_data = load_txt_file(args.np_filepath)
+    sm_data = read_q_stats(args.sm_filepath)
+    np_data = read_q_stats(args.np_filepath)
 
     # Max _/+ x-axis scale (Rounded up to nearest 25)
     combined_data = sm_data + np_data

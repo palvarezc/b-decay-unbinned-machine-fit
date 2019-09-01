@@ -85,8 +85,6 @@ _signal_coeffs = {
         ],
     ],
 }
-_signal_coeffs_p_wave_idxs = range(0, 36)
-_signal_coeffs_s_wave_idxs = range(36, 48)
 signal_models = list(_signal_coeffs.keys())
 
 amplitude_names = [
@@ -134,6 +132,10 @@ param_count = len(param_names)
 names = ['{}_{}'.format(a, p) for a in amplitude_names for p in param_names]
 latex_names = ['{} {}'.format(a, p) for a in amplitude_latex_names for p in param_latex_names]
 count = len(names)
+
+p_wave_idxs = range(0, 36)
+s_wave_idxs = range(36, 48)
+fit_trainable_idxs = list(itertools.chain(range(0, 21), range(24, 27), [36], [39], [42], [45]))
 
 # Fit coefficient initialization schemes
 FIT_INIT_TWICE_LARGEST_SIGNAL_SAME_SIGN = 'TWICE_LARGEST_SIGNAL_SAME_SIGN'
@@ -185,15 +187,13 @@ def fit(initialization=fit_initialization_scheme_default, current_signal_model=N
             if abs(signal_coeff) > max_signal_coeffs[signal_idx]:
                 max_signal_coeffs[signal_idx] = signal_coeff
 
-    fit_trainable_ids = list(itertools.chain(range(0, 21), range(24, 27), [36], [39], [42], [45]))
-
     fit_coeffs = []
 
     for i in range(count):
-        if i <= _signal_coeffs_p_wave_idxs[-1] and fix_p_wave_coeffs is not None:
+        if i <= p_wave_idxs[-1] and fix_p_wave_coeffs is not None:
             # This is a P-wave coeff and we've been told to copy a signal value
             coeff = tf.constant(fix_p_wave_coeffs[i])
-        elif i in fit_trainable_ids:
+        elif i in fit_trainable_idxs:
             if initialization == FIT_INIT_TWICE_LARGEST_SIGNAL_SAME_SIGN:
                 # Initialize coefficient from 0 to 2x largest value in all signal models
                 init_value = tf.random.uniform(

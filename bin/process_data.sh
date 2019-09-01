@@ -126,6 +126,6 @@ for signal_count in 600 2400
 do
     run ./bin/plot_q_test_statistic.py \
         --write-svg "results/q_test_statistic-${signal_count}.svg" \
-        results/q_test_stat-${signal_count}-SM.txt \
-        results/q_test_stat-${signal_count}-NP.txt
+        results/q_test_stat-${signal_count}-SM.csv \
+        results/q_test_stat-${signal_count}-NP.csv
 done

@@ -110,10 +110,10 @@ with bmf.Script(device=args.device) as script:
     sns.set(style='ticks')
 
     # Blue open circles for SM data. Don't plot 0 values
-    plt.scatter(x_list, [np.nan if x == 0 else x for x in sm_hist[0]], facecolors='none', edgecolors='b')
+    plt.scatter(x_list, [np.nan if x == 0 else x for x in sm_hist[0]], facecolors='none', edgecolors='b', s=15)
 
     # Red closed circles for NP data. Don't plot 0 values
-    plt.scatter(x_list, [np.nan if x == 0 else x for x in np_hist[0]], color='r')
+    plt.scatter(x_list, [np.nan if x == 0 else x for x in np_hist[0]], color='r', s=15)
 
     # Blue solid line for SM Gaussian
     plt.plot(x_list, sm_gaussian, color='b')

@@ -93,7 +93,7 @@ The optimizer (`-o`/`--opt-name`), learning rate (`-r`/`--learning-rate`) and ad
 (`-p`/`--opt-param`) can be supplied. E.g.
 
 ```
-$ ./bin/fit.py -o Adam -r 0.01 -p beta1 0.95 -p epsilon 1e-3
+$ ./bin/fit.py -o Adam -r 0.01 -p beta_1 0.95 -p epsilon 1e-3
 ```
 
 Gradient clipping by global norm is disabled by default, but can be enabled with the `-P` or `--grad-clip` arguments.

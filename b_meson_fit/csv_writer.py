@@ -4,10 +4,10 @@ Two classes are available:
 
 FitWriter:  Write results of a fit. Also writes the signal coeffs as id == 0.
             Will refuse to continue if the signal coefficients have changed.
-            Will contain columns id,normalized_nll,a_para_l_re_alpha,...,a_zero_r_im_gamma
+            Columns: id,normalized_nll,a_para_l_re_alpha,...,a_zero_r_im_gamma,time_taken
 
 QWriter:    Write results of a Q statistic run.
-            Will contain columns id,test_a_00_l_re_alpha,...,test_nll,null_a_00_l_re_alpha,null_nll,...,q,time_taken
+            Columns: id,test_a_00_l_re_alpha,...,test_nll,null_a_00_l_re_alpha,null_nll,...,q,time_taken
 """
 import csv
 import os

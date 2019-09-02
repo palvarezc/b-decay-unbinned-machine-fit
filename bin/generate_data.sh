@@ -143,7 +143,10 @@ do
                 --signal-count ${signal_count} \
                 --signal-model ${dataset_model} \
                 --test-model NP \
-                --null-model SM
+                --null-model SM \
+                --learning-rate 0.10 \
+                --opt-param beta_1 0.85 \
+                --opt-param epsilon 1e-3
         done
     done
 done

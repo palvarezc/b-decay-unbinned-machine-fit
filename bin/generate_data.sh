@@ -136,7 +136,7 @@ do
         for signal_count in ${q_stat_signal_counts}
         do
             csv="${results_dir}/q_test_stat-${signal_count}-${dataset_model}.csv"
-            is_run_needed "${csv}" "${iteration}" 0 || continue
+            is_run_needed "${csv}" "${iteration}" 1 || continue
             run ./bin/q_test_statistic.py \
                 --csv ${csv} \
                 --iteration ${iteration} \

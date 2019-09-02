@@ -145,7 +145,7 @@ do
         ${csv}
 done
 
-for signal_count in 600 2400
+for signal_count in $(find results/ -name "q_test_stat*.csv" | cut -d - -f 2 | sort -n | uniq)
 do
     run ./bin/plot_q_test_statistic.py \
         --write-svg "results/q_test_statistic-${signal_count}.svg" \

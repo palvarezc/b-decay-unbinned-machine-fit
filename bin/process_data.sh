@@ -16,6 +16,21 @@ run() {
     echo
 }
 
+html_page() {
+    # Create a quick & dirty html page so all plots can be compared easier
+    # It relies on the fact that 3 plots fit per row of a full HD fullscreen browser
+    # This is hacky and quite awful
+    filename=$1
+    shift
+
+    echo -e '<html>\n<body>\n' > ${filename};
+    ls $@ | cut -d / -f 2 | sed 's/0/z/g' | sort | sed 's/z/0/g' | while read i
+    do
+        echo -e "<img src='$i'/>" >> ${filename}
+    done
+    echo -e '</body>\n</html>\n' >> ${filename}
+}
+
 log_file="results/process_data.log"
 > ${log_file}
 exec 1> >(tee ${log_file})
@@ -53,9 +68,11 @@ do
     run ./bin/plot_fit_distributions.py \
         --write-svg "results/fit-${model}-rates-%name%.svg" \
         ${plots}
+    html_page results/fit-${model}-rates.html results/fit-${model}-rates*
     run ./bin/plot_pulls.py \
         --write-svg "results/pull-${model}-rates-%name%.svg" \
         ${plots}
+    html_page results/pull-${model}-rates.html results/pull-${model}-rates*
 
     # Beta1s
     plots=""
@@ -67,9 +84,11 @@ do
     run ./bin/plot_fit_distributions.py \
         --write-svg "results/fit-${model}-beta1-%name%.svg" \
         ${plots}
+    html_page results/fit-${model}-beta1.html results/fit-${model}-beta1*
     run ./bin/plot_pulls.py \
         --write-svg "results/pull-${model}-beta1-%name%.svg" \
         ${plots}
+    html_page results/pull-${model}-beta1.html results/pull-${model}-beta1*
 
     # Beta2s
     plots=""
@@ -81,9 +100,11 @@ do
     run ./bin/plot_fit_distributions.py \
         --write-svg "results/fit-${model}-beta2-%name%.svg" \
         ${plots}
+    html_page results/fit-${model}-beta2.html results/fit-${model}-beta2*
     run ./bin/plot_pulls.py \
         --write-svg "results/pull-${model}-beta2-%name%.svg" \
         ${plots}
+    html_page results/pull-${model}-beta2.html results/pull-${model}-beta2*
 
     # Epsilons
     plots=""
@@ -95,9 +116,11 @@ do
     run ./bin/plot_fit_distributions.py \
         --write-svg "results/fit-${model}-eps-%name%.svg" \
         ${plots}
+    html_page results/fit-${model}-eps.html results/fit-${model}-eps*
     run ./bin/plot_pulls.py \
         --write-svg "results/pull-${model}-eps-%name%.svg" \
         ${plots}
+    html_page results/pull-${model}-eps.html results/pull-${model}-eps*
 
     # Show discrete symmetries
     run ./bin/plot_fit_distributions.py \

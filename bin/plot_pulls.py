@@ -98,8 +98,11 @@ with bmf.Script(device=args.device) as script:
 
     for c_name in data_points.keys():
         plt.figure()
+        # Set style as well as font to Computer Modern Roman to match LaTeX output
+        sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
+
         plt.title(bmf.coeffs.latex_names[bmf.coeffs.names.index(c_name)])
-        sns.set(style='ticks')
+
         colors = itertools.cycle(sns.color_palette())
 
         for name, points in data_points[c_name].items():

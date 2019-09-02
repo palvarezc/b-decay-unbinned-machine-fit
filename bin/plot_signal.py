@@ -72,7 +72,8 @@ with bmf.Script(device=args.device) as script:
     ]
     for events, name, latex_name in zip(signal_events.numpy().transpose(), names, latex_names):
         plt.figure()
-        sns.set(style='ticks')
+        # Set style as well as font to Computer Modern Roman to match LaTeX output
+        sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
         sns.kdeplot(events, shade=True, cut=0)
 

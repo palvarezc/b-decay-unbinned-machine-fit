@@ -62,7 +62,8 @@ with bmf.Script(device=args.device) as script:
     modulus_frac_s = bmf.signal.modulus_frac_s(coeffs, q2)
 
     plt.figure()
-    sns.set(style='ticks')
+    # Set style as well as font to Computer Modern Roman to match LaTeX output
+    sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
     plt.plot(q2.numpy(), decay_rate_frac_s.numpy(), label='decay_rate')
     plt.plot(q2.numpy(), modulus_frac_s.numpy(), label='modulus')

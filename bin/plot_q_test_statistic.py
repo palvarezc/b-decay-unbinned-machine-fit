@@ -107,7 +107,8 @@ with bmf.Script(device=args.device) as script:
     bmf.stdout('mean: {} stddev: {} sigma level: {}'.format(sm_mean, sm_stddev, sigma_level))
 
     plt.figure()
-    sns.set(style='ticks')
+    # Set style as well as font to Computer Modern Roman to match LaTeX output
+    sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
     # Blue open circles for SM data. Don't plot 0 values
     plt.scatter(x_list, [np.nan if x == 0 else x for x in sm_hist[0]], facecolors='none', edgecolors='b', s=15)

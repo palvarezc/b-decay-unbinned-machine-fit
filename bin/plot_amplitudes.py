@@ -65,7 +65,8 @@ with bmf.Script(device=args.device) as script:
         imag_latex_name = bmf.coeffs.amplitude_latex_names[(amplitudes.index(amplitude) * 2) + 1]
 
         plt.figure()
-        sns.set(style='ticks')
+        # Set style as well as font to Computer Modern Roman to match LaTeX output
+        sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
         plt.plot(q2.numpy(), real.numpy(), label=real_latex_name)
         plt.plot(q2.numpy(), imag.numpy(), label=imag_latex_name)

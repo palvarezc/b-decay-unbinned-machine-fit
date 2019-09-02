@@ -84,7 +84,8 @@ with bmf.Script(device=args.device) as script:
     for observable in observables:
         name, latex_name, values = observable
         plt.figure()
-        sns.set(style='ticks')
+        # Set style as well as font to Computer Modern Roman to match LaTeX output
+        sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
         plt.plot(q2.numpy(), values.numpy())
         plt.margins(x=0)

@@ -57,7 +57,8 @@ with bmf.Script(device=args.device) as script:
     mix = tf.math.abs(bmf.breit_wigner.k700_k892_distribution(masses))
 
     plt.figure()
-    sns.set(style='ticks')
+    # Set style as well as font to Computer Modern Roman to match LaTeX output
+    sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
     plt.plot(masses.numpy() * 1000, k892.numpy(), label=r'$K^*_0(892)$')
     plt.plot(masses.numpy() * 1000, k700.numpy(), label=r'$K^*_0(700)$')

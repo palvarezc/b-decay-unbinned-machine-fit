@@ -94,6 +94,6 @@ with bmf.Script(device=args.device) as script:
         if args.write_svg is not None:
             filepath = args.write_svg.replace('%name%', name)
             bmf.stdout('Writing {}'.format(filepath))
-            plt.savefig(filepath, format="svg")
+            plt.savefig(filepath, format='svg', bbox_inches='tight')
         else:
             plt.show()

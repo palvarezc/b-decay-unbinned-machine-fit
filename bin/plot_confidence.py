@@ -158,11 +158,12 @@ with bmf.Script(device=args.device) as script:
             plt.ylim(-amplitude_max * 1.1, amplitude_max * 1.1)
 
         plt.xlabel(r'$q^2 / (GeV^2/c^4)$')
+        plt.ylabel('Predicted value')
         plt.margins(x=0)
         plt.legend()
         if args.write_svg is not None:
             filepath = args.write_svg.replace('%name%', amplitude_name)
             bmf.stdout('Writing {}'.format(filepath))
-            plt.savefig(filepath, format="svg")
+            plt.savefig(filepath, format='svg', bbox_inches='tight')
         else:
             plt.show()

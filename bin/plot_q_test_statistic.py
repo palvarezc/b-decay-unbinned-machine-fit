@@ -111,16 +111,23 @@ with bmf.Script(device=args.device) as script:
     sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
     # Blue open circles for SM data. Don't plot 0 values
-    plt.scatter(x_list, [np.nan if x == 0 else x for x in sm_hist[0]], facecolors='none', edgecolors='b', s=15)
+    plt.scatter(
+        x_list,
+        [np.nan if x == 0 else x for x in sm_hist[0]],
+        facecolors='none',
+        edgecolors='b',
+        s=15,
+        label='SM'
+    )
 
     # Red closed circles for NP data. Don't plot 0 values
-    plt.scatter(x_list, [np.nan if x == 0 else x for x in np_hist[0]], color='r', s=15)
+    plt.scatter(x_list, [np.nan if x == 0 else x for x in np_hist[0]], color='r', s=15, label='NP')
 
     # Blue solid line for SM Gaussian
-    plt.plot(x_list, sm_gaussian, color='b')
+    plt.plot(x_list, sm_gaussian, color='b', label='SM fit')
 
     # Red dashed line for NP median
-    plt.gca().axvline(np_median, color='r', linestyle=':')
+    plt.gca().axvline(np_median, color='r', linestyle=':', label='NP median')
 
     # Calculate the y-min by finding the y-axis order of magnitude just before the NP median, rounding down,
     #  and dropping 1 more order of magnitude
@@ -141,6 +148,11 @@ with bmf.Script(device=args.device) as script:
     plt.xlabel('Q')
     plt.ylabel('Fraction / bin')
     plt.yscale('log')
+
+    # Show legend in order NP, NP median, SM, SM fit
+    handles, labels = plt.gca().get_legend_handles_labels()
+    order = [3, 1, 2, 0]
+    plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order])
 
     if args.write_svg is not None:
         filepath = args.write_svg

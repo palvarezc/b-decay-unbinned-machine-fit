@@ -11,7 +11,7 @@ import itertools
 import matplotlib
 import numpy as np
 import os
-import scipy as sp
+import scipy.stats
 import shutil
 import tensorflow.compat.v2 as tf
 
@@ -108,7 +108,7 @@ with bmf.Script(device=args.device) as script:
         for name, points in data_points[c_name].items():
             if not all(elem == 0.0 for elem in points):
                 mean = np.mean(points)
-                std_err = sp.stats.sem(points, axis=None)
+                std_err = scipy.stats.sem(points, axis=None)
                 pull = list(map(lambda p: (p - signal_coeffs[name][c_name]) / std_err, points))
                 pull_mean = np.mean(pull)
 

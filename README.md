@@ -185,6 +185,8 @@ defined in the `combos` variable in that file and logs the fits for viewing in T
 macro machine learning options (e.g. which optimizer to use). For more subtle settings an ensemble fit should be
 performed instead as [compare\_optimizers.py](./bin/compare_optimizers.py) fixes all initial coefficients to `1.0`
 so that comparison is possible - which isn't very realistic.
+* [table\_mean\_err\_pull.py](./bin/table_mean_err_pull.py): Output the LaTeX for a table of signal values, means,
+standard errors and pull means for a given CSV fit file. Takes a CSV file as a single argument. Used for publication
 * [table\_signal\_coeffs.py](./bin/table_signal_coeffs.py): Output the LaTeX for a table of all the coefficient values.
 Used for publication.
 * [time\_taken.py](./bin/time_taken.sh): Takes a CSV file as an argument and outputs the average time taken per fit.

@@ -187,6 +187,7 @@ performed instead as [compare\_optimizers.py](./bin/compare_optimizers.py) fixes
 so that comparison is possible - which isn't very realistic.
 * [table\_signal\_coeffs.py](./bin/table_signal_coeffs.py): Output the LaTeX for a table of all the coefficient values.
 Used for publication.
+* [time\_taken.py](./bin/table_taken.sh): Takes a CSV file as an argument and outputs the average time taken per fit.
 
 
 ## Roadmap

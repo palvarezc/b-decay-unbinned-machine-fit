@@ -8,6 +8,6 @@ fi
 csv=$1
 
 row_count=$(wc -l <(sed -r '/^[a-z0]+/d' ${csv}) | cut -d ' ' -f 1)
-total_time=$(awk -F, '{print $NF}' ${csv} | tr -d '\r' | paste -sd+ | bc -l)
+total_time=$(awk -F, '{print $NF}' <(sed -r '/^[a-z0]+/d' ${csv}) | tr -d '\r' | paste -sd+ | bc -l)
 
 echo "${total_time}/${row_count}" | bc -l

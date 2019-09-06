@@ -37,8 +37,8 @@ $ python -m unittest
 
 ## Fitting
 
-The script [fit.py](./bin/fit.py) can be used to run a fitting ensemble. The fits will start with random coefficients
-between `-100%` and `+100%` of the signal coefficient values. Run `./bin/fit.py --help` to see all options and defaults.
+The script [fit.py](./bin/fit.py) can be used to run a fitting ensemble. Run `./bin/fit.py --help` to see all options
+and defaults.
 
 You can run it for multiple iterations with either the `-i` or `--iterations` arguments. E.g.:
 
@@ -71,7 +71,7 @@ $ ./bin/fit.py -f TWICE_LARGEST_SIGNAL_SAME_SIGN
 The algorithms available are:
 
  * `TWICE_LARGEST_SIGNAL_SAME_SIGN`: Initialize coefficients from `0` to `2x` the largest value for each coefficient
-  in all signal models.
+  in all signal models. This is the default.
  * `TWICE_CURRENT_SIGNAL_ANY_SIGN`: Initialize coefficients from `-2x` to `+2x` the value in the signal model used.
  * `CURRENT_SIGNAL`: Initialize coefficients to the same values as the signal model used.
  
@@ -189,7 +189,7 @@ so that comparison is possible - which isn't very realistic.
 standard errors and pull means for a given CSV fit file. Takes a CSV file as a single argument. Used for publication
 * [table\_signal\_coeffs.py](./bin/table_signal_coeffs.py): Output the LaTeX for a table of all the coefficient values.
 Used for publication.
-* [time\_taken.py](./bin/time_taken.sh): Takes a CSV file as an argument and outputs the average time taken per fit.
+* [time\_taken.sh](./bin/time_taken.sh): Takes a CSV file as an argument and outputs the average time taken per fit.
 
 
 ## Roadmap
@@ -214,6 +214,7 @@ and fitting based on nuisance parameters for those polynomials.
 Potential cleanups:
 
 * Move uses of `csv.DictReader` into a CSV reader class
+* Move calculating means, std errs, pulls etc. to a library. Possibly part of above.
 * Split `signal.py` into other files (e.g. `observables.py`, `decay_rate.py`). Without negatively affecting fit
 performance, address the fact that some of those  functions take a flat coefficient list but others take amplitudes
 (the  3 `decay_rate_angle_integrated*()` functions are a good example of this inconsistency as can be seen

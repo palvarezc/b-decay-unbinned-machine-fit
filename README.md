@@ -112,7 +112,7 @@ $ ./bin/fit.py -u 1e-8
 
 ## Q test statistic
 
-The script [q_test_statistic.py](./bin/q_test_statistic.py) can be used to generate Q test statistics. The script
+The script [q\_test\_statistic.py](./bin/q_test_statistic.py) can be used to generate Q test statistics. The script
 allows all options that [fit.py](./bin/fit.py) does.
 
 Additionally the `-n`/`--null-model` and  `-t`/`--test-model` arguments are mandatory. These specify which
@@ -125,11 +125,88 @@ $ ./bin/q_test_statistic.py -c Q_NP.csv -i 1000 -S NP -t NP -n SM
 $ ./bin/q_test_statistic.py -c Q_SM.csv -i 1000 -S SM -t NP -n SM
 ```
 
+## Plotting
+
+Various scripts exist to generate plots. They should be runnable within PyCharm, or if you want to export the plots,
+runnable at the CLI with the optional `-w` or `--write-svg` options. Some scripts require the string `%name%` within
+the `--write-svg` argument string which will be replaced for example when writing plotting of coefficients. Run
+any script with `-h` or `--help` to see the full list of options and defaults. Some scripts will also output
+values of interest when they run.
+
+Plot Breit-Wigner distributions:
+
+```
+$ ./bin/plot_breit_wigner.py -w breit_wigner.svg
+```
+
+Plot spin amplitudes (takes an optional `-S`/`--signal-model` argument):
+
+```
+$ ./bin/plot_amplitudes.py -S NP -w amplitude_NP_%name%.svg
+```
+
+Plot angular observables (takes an optional `-S`/`--signal-model` argument):
+
+```
+$ ./bin/plot_angular_observables.py -S NP -w observable_NP_%name%.svg
+```
+
+Plot S-wave fraction (takes an optional `-S`/`--signal-model` argument):
+
+```
+$ ./bin/plot_frac_s.py -S NP -w frac_s_NP.svg
+```
+
+Plot differential decay rate (takes an optional `-S`/`--signal-model` argument):
+
+```
+$ ./bin/plot_differential_decay_rate.py -S NP -w differential_decay_rate_NP.svg
+```
+
+Plot generated signal events for each independent variable (takes optional `-S`/`--signal-model` and
+`-s`/`--signal-count` arguments):
+
+```
+$ ./bin/plot_signal.py -S NP -w signal_NP_%name%.svg
+```
+
+Plot fit distributions (takes a list of CSV files from [fit.py](./bin/fit.py) and an optional name for each one
+to put in the legend):
+
+```
+$ ./bin/plot_fit_distributions.py -w fit_single_%name%.svg fit1.csv
+$ ./bin/plot_fit_distributions.py -w fit_combined_%name%.svg fit1.csv fit2.csv
+$ ./bin/plot_fit_distributions.py -w fit_combined_named_%name%.svg fit1.csv:'Fit 1' fit2.csv:'Fit 2'
+```
+
+Plot pulls (takes a list of CSV files from [fit.py](./bin/fit.py) and an optional name for each one
+to put in the legend):
+
+```
+$ ./bin/plot_pulls.py -w pull_single_%name%.svg fit1.csv
+$ ./bin/plot_pulls.py -w pull_combined_%name%.svg fit1.csv fit2.csv
+$ ./bin/plot_pulls.py -w pull_combined_named_%name%.svg fit1.csv:'Fit 1' fit2.csv:'Fit 2'
+```
+
+Plot confidence levels for each coefficient (takes a single CSV file from [fit.py](./bin/fit.py)):
+
+```
+$ ./bin/plot_confidence.py -w confidence_%name%.svg fit1.csv
+```
+
+Plot Q statistics and calculate sigma level (takes two mandatory arguments for the SM and NP csv file from
+[q\_test\_statistic.py](./bin/q_test_statistic.py) to use. Also takes an optional `-b`/`--bins` argument to control
+the number of histogram bins to calculate for plotting):
+
+```
+$ ./bin/plot_q_test_statistic.py -w q_test_statistic.svg q_sm.csv q_np.csv
+```
+
 ## Using Tensorboard
 
 [Tensorboard](https://www.tensorflow.org/guide/summaries_and_tensorboard) can be used to tune the optimizer. Values
-will be logged for Tensorboard from either the [compare_optimizers.py](./bin/compare_optimizers.py),
-[fit.py](./bin/fit.py), or [q_test_statistic.py](./bin/q_test_statistic.py) scripts with the `-l` or `--log` arguments.
+will be logged for Tensorboard from either the [compare\_optimizers.py](./bin/compare_optimizers.py),
+[fit.py](./bin/fit.py), or [q\_test\_statistic.py](./bin/q_test_statistic.py) scripts with the `-l` or `--log` arguments.
 Note that logging statistics has a large performance hit so should not be used for production runs.
 Once scripts that have logging enabled start, they will output the command to start Tensorboard.
 Additionally they will output a `Filter regex` that can be used in the left hand pane of the `Scalars` page to filter

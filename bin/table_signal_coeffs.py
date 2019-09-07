@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """Script to output signal coefficients as LaTeX table for publication"""
 
+import os
+# Disable non-important TF log lines
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+
 import b_meson_fit as bmf
 
 signal_coeffs = {}

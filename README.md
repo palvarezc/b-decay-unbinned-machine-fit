@@ -194,11 +194,12 @@ Plot confidence levels for each coefficient (takes a single CSV file from [fit.p
 $ ./bin/plot_confidence.py -w confidence_%name%.svg fit1.csv
 ```
 
-Plot fit difference/std_err/pull_mean vs absolute signal value (takes a list of CSV files from [fit.py](./bin/fit.py)
-and an optional name for each one to put in the legend):
+Plot a fit stat (signal, abs\_signal, diff, std_err, pull\_mean) against another stat (takes mandatory
+`-x`/`--x-axis` and `-y`/`--y-axis` arguments plus a list of CSV files from [fit.py](./bin/fit.py) and an optional 
+name for each one to put in the legend):
 
 ```
-$ ./bin/plot_stat_vs_signal.py -w %name%_vs_signal.svg fit1.csv:'Fit 1' fit2.csv:'Fit 2'
+$ ./bin/plot_fit_stats.py -x abs_signal -y std_err -w std_err_vs_abs_signal.svg fit1.csv:'Fit 1' fit2.csv:'Fit 2'
 ```
 
 Plot Q statistics and calculate sigma level (takes two mandatory arguments for the SM and NP csv file from

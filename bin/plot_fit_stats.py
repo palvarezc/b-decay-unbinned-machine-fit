@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Plot fit difference/std_err/pull_mean vs absolute signal value
+Plot two stats against each other for fit CSVs
 """
 import argparse
 import csv
@@ -25,9 +25,17 @@ def filename_and_name(arg):
     return _filename, _name
 
 
+axes = {
+    'signal': 'Signal',
+    'abs_signal': 'Absolute Signal',
+    'diff': 'Difference',
+    'std_err': 'Standard Error',
+    'pull_mean': 'Pull Mean'
+}
+
 columns = shutil.get_terminal_size().columns
 parser = argparse.ArgumentParser(
-    description='Plot fit difference/std_err/pull_mean vs absolute signal value.',
+    description='Plot two stats against each other for fit CSVs.',
     formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=columns, width=columns),
 )
 parser.add_argument(
@@ -42,7 +50,23 @@ parser.add_argument(
     '--write-svg',
     dest='write_svg',
     metavar='SVG_PATH',
-    help='write plots as SVGs using this filepath. this string must contain \'%%name%%\''
+    help='write plots as SVGs using this filepath'
+)
+parser.add_argument(
+    '-x',
+    '--x-axis',
+    dest='x_axis',
+    choices=axes.keys(),
+    required=True,
+    help='what to plot on the x-axis',
+)
+parser.add_argument(
+    '-y',
+    '--y-axis',
+    dest='y_axis',
+    choices=axes.keys(),
+    required=True,
+    help='what to plot on the y-axis',
 )
 parser.add_argument(
     nargs='+',
@@ -53,8 +77,6 @@ parser.add_argument(
     help='Filename and optional name to plot (e.g. NP_0.15.csv or NP_0.15.csv:"NP 0.15")'
 )
 args = parser.parse_args()
-if args.write_svg and '%name%' not in args.write_svg:
-    parser.error('-w/--write-svg must contain \'%name%\'')
 
 with bmf.Script(device=args.device) as script:
     if args.write_svg is not None:
@@ -92,8 +114,9 @@ with bmf.Script(device=args.device) as script:
                     data_points[c_name][p_name].append(float(row[c_name]))
 
     # Calculate what to plot
-    signal_list = {}
-    plot_list = {'diff': {}, 'std_err': {}, 'pull_mean': {}}
+    plot_list = {}
+    for name in axes.keys():
+        plot_list[name] = {}
     for p_name in signal_coeffs.keys():
         for c_name, signal_value in signal_coeffs[p_name].items():
             c_id = bmf.coeffs.names.index(c_name)
@@ -106,9 +129,13 @@ with bmf.Script(device=args.device) as script:
             pull = list(map(lambda p: (p - signal_value) / std_err, data_points[c_name][p_name]))
             pull_mean = np.mean(pull)
 
-            if p_name not in signal_list:
-                signal_list[p_name] = []
-            signal_list[p_name].append(abs(signal_value))
+            if p_name not in plot_list['signal']:
+                plot_list['signal'][p_name] = []
+            plot_list['signal'][p_name].append(signal_value)
+
+            if p_name not in plot_list['abs_signal']:
+                plot_list['abs_signal'][p_name] = []
+            plot_list['abs_signal'][p_name].append(abs(signal_value))
 
             if p_name not in plot_list['diff']:
                 plot_list['diff'][p_name] = []
@@ -123,23 +150,23 @@ with bmf.Script(device=args.device) as script:
             plot_list['pull_mean'][p_name].append(pull_mean)
 
     # Do plots
-    for plot_name, plot_axis in {'diff': 'Difference', 'std_err': 'Standard Error', 'pull_mean': 'Pull Mean'}.items():
-        plt.figure()
-        # Set style as well as font to Computer Modern Roman to match LaTeX output
-        sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
+    plt.figure()
+    # Set style as well as font to Computer Modern Roman to match LaTeX output
+    sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
-        for p_name in plot_list[plot_name].keys():
-            plt.scatter(signal_list[p_name], plot_list[plot_name][p_name], label=p_name, marker='x')
+    for p_name in signal_coeffs.keys():
+        plt.scatter(plot_list[args.x_axis][p_name], plot_list[args.y_axis][p_name], label=p_name, marker='x')
 
-        plt.xlabel('Absolute Signal Value')
-        plt.ylabel(plot_axis)
+    plt.xlabel(axes[args.x_axis])
+    plt.ylabel(axes[args.y_axis])
+    plt.margins(x=0)
 
-        if len(plot_list) > 1:
-            plt.legend()
+    if len(plot_list) > 1:
+        plt.legend()
 
-        if args.write_svg is not None:
-            filepath = args.write_svg.replace('%name%', plot_name)
-            bmf.stdout('Writing {}'.format(filepath))
-            plt.savefig(filepath, format='svg', bbox_inches='tight')
-        else:
-            plt.show()
+    if args.write_svg is not None:
+        filepath = args.write_svg
+        bmf.stdout('Writing {}'.format(filepath))
+        plt.savefig(filepath, format='svg', bbox_inches='tight')
+    else:
+        plt.show()

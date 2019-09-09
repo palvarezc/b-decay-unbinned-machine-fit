@@ -110,6 +110,14 @@ this value with the `-u` or `--grad-max-cutoff` arguments:
 $ ./bin/fit.py -u 1e-8
 ```
 
+If you set `-u`/`--grad-max-cutoff` or change the optimizer defaults, you may also want to specify 
+`-m`/`--max-step`. This controls the max number of iterations before a fit is restarted with the same signal events
+(defaults to 20,000):
+
+```
+$ ./bin/fit.py -u 1e-8 -m 100000
+```
+
 ## Q test statistic
 
 The script [q\_test\_statistic.py](./bin/q_test_statistic.py) can be used to generate Q test statistics. The script

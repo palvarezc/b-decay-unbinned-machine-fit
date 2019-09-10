@@ -54,6 +54,7 @@ class CsvWriter:
 
         if written_headers is None:
             self.writer.writeheader()
+            run_extra_header_func = True
         if extra_header_func is not None and run_extra_header_func:
             extra_header_func()
 

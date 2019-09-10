@@ -16,16 +16,16 @@ class TestCoeffs(unittest.TestCase):
     def test_names(self):
         """Check coeff names"""
         self.assertEqual('a_para_l_re_alpha', bmfc.names[0])
-        self.assertEqual(r'Re($a_{\parallel}^L$) $\alpha$', bmfc.latex_names[0])
+        self.assertEqual(r'Re($A_{\parallel}^L$) $\alpha$', bmfc.latex_names[0])
 
         self.assertEqual('a_perp_r_re_beta', bmfc.names[19])
-        self.assertEqual(r'Re($a_{\bot}^R$) $\beta$', bmfc.latex_names[19])
+        self.assertEqual(r'Re($A_{\bot}^R$) $\beta$', bmfc.latex_names[19])
 
         self.assertEqual('a_0_r_im_gamma', bmfc.names[35])
-        self.assertEqual(r'Im($a_{0}^R$) $\gamma$', bmfc.latex_names[35])
+        self.assertEqual(r'Im($A_{0}^R$) $\gamma$', bmfc.latex_names[35])
 
         self.assertEqual('a_00_l_im_gamma', bmfc.names[41])
-        self.assertEqual(r'Im($a_{00}^L$) $\gamma$', bmfc.latex_names[41])
+        self.assertEqual(r'Im($A_{00}^L$) $\gamma$', bmfc.latex_names[41])
 
     def test_signal_coeffs(self):
         """Check signal coefficients have correct # of all constants"""

@@ -285,12 +285,36 @@ Used for publication.
 * [time\_taken.sh](./bin/time_taken.sh): Takes a CSV file as an argument and outputs the average time taken per fit.
 
 
+## Making modifications
+
+Listed here are some modifications you may wish to make and how to do them. At minimum, you should check
+the unit tests still pass before you commit.
+
+### Adding/changing signal coefficients
+
+To add a new signal model or modify existing signal model coefficients, see the `_signal_coeffs` list in
+[coeffs.py](./b_meson_fit/coeffs.py).
+
+### Changing trainable coefficients
+
+To change what coefficients are trained by Tensorflow, modify the `fit_trainable_idxs` list in 
+[coeffs.py](./b_meson_fit/coeffs.py). IDs `0-11` correspond to `a_para` followed by `12-23` for `a_perp`,
+`24-35` for `a_0` and `36-47` for `a_00`. Within each block of 12, the first 6 are `left` and the last
+6 are `right`. Within those blocks the first 3 are `real` and the last 3 are `imaginary`. Those blocks of
+3 correspond to `alpha`, `beta` and `gamma`. So for example, 2 is `a_para_l_re_gamma`, 3 is
+`a_para_l_im_alpha`, 6 is `a_para_r_re_alpha` and 47 is `a_00_r_im_gamma`.
+
+### Changing the masses and decay widths for BW distributions
+
+Modify the `mass_*` and `decay_width_*` values at the top of
+[breit\_wigner.py](./b_meson_fit/breit_wigner.py).
+
 ## Roadmap
 
 Fixes needed:
 
 * Change signal coefficient values to ones that produce correct shaped observable plots (see paper)
-* Replace a_00_* signal coefficient values with proper values (see paper)
+* Replace `a_00_*` signal coefficient values with proper values (see paper)
 * If a fit is partially written to a CSV, the signal coefficients are changed, and then the fit is resumed, the fitting
 script will rightly complain about the change and refuse to continue. However if the TWICE\_LARGEST\_SIGNAL\_SAME\_SIGN
 algorithm is being used and either another signal model is added or another signal model is changed, then when resuming

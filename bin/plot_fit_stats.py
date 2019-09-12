@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """
 Plot two stats against each other for fit CSVs
+
+This script was written in a rush near the end of the project and needs a cleanup.
 """
 import argparse
 import csv
@@ -44,6 +46,21 @@ parser.add_argument(
     dest='device',
     default=bmf.Script.device_default,
     help='use this device e.g. CPU:0, GPU:0, GPU:1 (default: {})'.format(bmf.Script.device_default),
+)
+parser.add_argument(
+    '-l',
+    '--legend-loc',
+    dest='legend_loc',
+    default='best',
+    help='where to tell matplotlib to put the legend (default: best)'
+)
+parser.add_argument(
+    '-s',
+    '--split-by',
+    dest='split_by',
+    choices=['plot_name', 'amplitude', 'param'],
+    default='plot_name',
+    help='how to split up the data for the legend (default: plot_name)',
 )
 parser.add_argument(
     '-w',
@@ -129,40 +146,60 @@ with bmf.Script(device=args.device) as script:
             pull = list(map(lambda p: (p - signal_value) / std_err, data_points[c_name][p_name]))
             pull_mean = np.mean(pull)
 
-            if p_name not in plot_list['signal']:
-                plot_list['signal'][p_name] = []
-            plot_list['signal'][p_name].append(signal_value)
+            # Work out label
+            p_id = c_id % bmf.coeffs.param_count
+            a_id = int(((c_id - p_id) / bmf.coeffs.param_count) % bmf.coeffs.amplitude_count)
+            if args.split_by == 'amplitude':
+                label = bmf.coeffs.amplitude_latex_names[a_id]
+            elif args.split_by == 'param':
+                if a_id % 2 == 0:
+                    label = "Real " + bmf.coeffs.param_latex_names[p_id]
+                else:
+                    label = "Imag " + bmf.coeffs.param_latex_names[p_id]
+            elif args.split_by == 'plot_name':
+                label = p_name
+            else:
+                raise RuntimeError('Unexpected split_by: {}'.format(args.split_by))
 
-            if p_name not in plot_list['abs_signal']:
-                plot_list['abs_signal'][p_name] = []
-            plot_list['abs_signal'][p_name].append(abs(signal_value))
+            if label not in plot_list['signal']:
+                plot_list['signal'][label] = []
+            plot_list['signal'][label].append(signal_value)
 
-            if p_name not in plot_list['diff']:
-                plot_list['diff'][p_name] = []
-            plot_list['diff'][p_name].append(diff)
+            if label not in plot_list['abs_signal']:
+                plot_list['abs_signal'][label] = []
+            plot_list['abs_signal'][label].append(abs(signal_value))
 
-            if p_name not in plot_list['std_err']:
-                plot_list['std_err'][p_name] = []
-            plot_list['std_err'][p_name].append(std_err)
+            if label not in plot_list['diff']:
+                plot_list['diff'][label] = []
+            plot_list['diff'][label].append(diff)
 
-            if p_name not in plot_list['pull_mean']:
-                plot_list['pull_mean'][p_name] = []
-            plot_list['pull_mean'][p_name].append(pull_mean)
+            if label not in plot_list['std_err']:
+                plot_list['std_err'][label] = []
+            plot_list['std_err'][label].append(std_err)
+
+            if label not in plot_list['pull_mean']:
+                plot_list['pull_mean'][label] = []
+            plot_list['pull_mean'][label].append(pull_mean)
 
     # Do plots
     plt.figure()
     # Set style as well as font to Computer Modern Roman to match LaTeX output
     sns.set(style='ticks', font='cmr10', rc={'mathtext.fontset': 'cm', 'axes.unicode_minus': False})
 
-    for p_name in signal_coeffs.keys():
-        plt.scatter(plot_list[args.x_axis][p_name], plot_list[args.y_axis][p_name], label=p_name, marker='x')
+    for label in plot_list['signal']:
+        plt.scatter(
+            plot_list[args.x_axis][label],
+            plot_list[args.y_axis][label],
+            label=label,
+            marker='x'
+        )
 
     plt.xlabel(axes[args.x_axis])
     plt.ylabel(axes[args.y_axis])
     plt.margins(x=0)
 
     if len(plot_list) > 1:
-        plt.legend()
+        plt.legend(loc=args.legend_loc)
 
     if args.write_svg is not None:
         filepath = args.write_svg

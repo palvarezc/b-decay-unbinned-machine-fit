@@ -5,6 +5,7 @@ Plot confidence, mean and signal values for an ensemble run
 
 import argparse
 import csv
+import math
 import matplotlib
 import shutil
 import tensorflow.compat.v2 as tf
@@ -141,7 +142,7 @@ with bmf.Script(device=args.device) as script:
             min_95.append(below_mean[int((len(below_mean) - 1) * 0.95)])
 
             # Keep track of the max so we can pick a sensible y-axis
-            this_max = max(abs(min_68[-1]), abs(max_95[-1]))
+            this_max = max(abs(min_95[-1]), abs(max_95[-1]))
             if this_max > amplitude_max:
                 amplitude_max = this_max
 
@@ -155,7 +156,8 @@ with bmf.Script(device=args.device) as script:
         )
 
         if amplitude_max > 0.0:
-            plt.ylim(-amplitude_max * 1.1, amplitude_max * 1.1)
+            max_axis = 5 * math.ceil(amplitude_max / 5)
+            plt.ylim(-max_axis, max_axis)
 
         plt.xlabel(r'$q^2 / (GeV^2/c^4)$')
         plt.ylabel('Predicted value')

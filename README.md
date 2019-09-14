@@ -111,8 +111,9 @@ $ ./bin/fit.py -u 1e-8
 ```
 
 If you set `-u`/`--grad-max-cutoff` or change the optimizer defaults, you may also want to specify 
-`-m`/`--max-step`. This controls the max number of iterations before a fit is restarted with the same signal events
-(defaults to 20,000):
+`-m`/`--max-step`. This controls the max number of iterations before a fit is restarted
+(defaults to 20,000). If the initialisation scheme randomises coefficients then the signal will be retried, otherwise a
+new signal will be generated. E.g.:
 
 ```
 $ ./bin/fit.py -u 1e-8 -m 100000

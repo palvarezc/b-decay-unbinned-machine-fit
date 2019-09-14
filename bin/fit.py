@@ -201,4 +201,9 @@ with bmf.Script(device=args.device) as script:
                 if optimizer.step >= args.max_step:
                     bmf.stderr('No convergence after {} steps. Restarting iteration'.format(args.max_step))
                     attempt = attempt + 1
+                    if args.fit_init not in bmf.coeffs.fit_init_schemes_with_randomization:
+                        # If this scheme doesn't randomise coefficients, then restarting with the same signal will
+                        #  lead to the same result.
+                        bmf.stderr('{} initialisation used so generating new signal'.format(args.fit_init))
+                        signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
                     break

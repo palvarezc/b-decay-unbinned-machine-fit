@@ -124,7 +124,7 @@ do
                 fit ${iteration} ${model} def def def ${epsilon} def
         done
         fit ${iteration} ${model} def def def def TWICE_CURRENT_SIGNAL_ANY_SIGN
-        fit ${iteration} ${model} 0.10 def def def CURRENT_SIGNAL
+        fit ${iteration} ${model} 0.005 def def def CURRENT_SIGNAL
     done
 done
 

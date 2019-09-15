@@ -110,11 +110,10 @@ with bmf.Script(device=args.device) as script:
         mean = tf.reduce_mean(tensor_data, axis=0)
         plt.plot(q2_range.numpy(), mean.numpy(), color='magenta', label='mean')
 
-        min_68 = []
-        max_68 = []
-        min_95 = []
-        max_95 = []
-        amplitude_max = 0.0
+        min_68, max_68, min_95, max_95 = ([] for i in range(4))
+        amplitude_max = amplitude_min = 0.0
+        diff_at_max_plus = diff_at_max_minus = diff_at_max = q2_at_max = 0.0
+        diff_at_min_plus = diff_at_min_minus = diff_at_min = q2_at_min = 0.0
         for i, q2 in enumerate(q2_range):
             # For this q^2 value, get list of values above the mean
             above_mean = sorted(
@@ -142,9 +141,36 @@ with bmf.Script(device=args.device) as script:
             min_95.append(below_mean[int((len(below_mean) - 1) * 0.95)])
 
             # Keep track of the max so we can pick a sensible y-axis
-            this_max = max(abs(min_95[-1]), abs(max_95[-1]))
-            if this_max > amplitude_max:
+            this_max = abs(max_95[-1])
+            if amplitude_max == 0.0 or this_max > amplitude_max:
                 amplitude_max = this_max
+
+            # Keep track of confidence band extremes for printing
+            diff_plus = max_95[-1] - mean[i].numpy()
+            diff_minus = mean[i].numpy() - min_95[-1]
+            diff_abs_max = max(abs(diff_plus), abs(diff_minus))
+            if diff_at_max == 0.0 or diff_abs_max > diff_at_max:
+                q2_at_max = q2.numpy()
+                diff_at_max = diff_abs_max
+                diff_at_max_plus = diff_plus
+                diff_at_max_minus = diff_minus
+            if diff_at_min == 0.0 or diff_abs_max < diff_at_min:
+                q2_at_min = q2.numpy()
+                diff_at_min = diff_abs_max
+                diff_at_min_plus = diff_plus
+                diff_at_min_minus = diff_minus
+
+        bmf.stdout(
+            'Processed {}. 95% min +{}/-{} @ {}. 95% max +{}/-{} @ {}'.format(
+                amplitude_name,
+                diff_at_min_plus,
+                diff_at_min_minus,
+                q2_at_min,
+                diff_at_max_plus,
+                diff_at_max_minus,
+                q2_at_max,
+            )
+        )
 
         plt.fill_between(q2_range.numpy(), min_95, max_95, label='95%', color='lightblue')
         plt.fill_between(q2_range.numpy(), min_68, max_68, label='68%', color='lightgreen')

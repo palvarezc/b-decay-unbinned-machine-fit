@@ -24,6 +24,13 @@ parser.add_argument(
     help='use this device e.g. CPU:0, GPU:0, GPU:1 (default: {})'.format(bmf.Script.device_default),
 )
 parser.add_argument(
+    '-l',
+    '--left-transform',
+    dest='left_transform',
+    action='store_true',
+    help='perform the transformations: a_para_l -> -a_perp_l, a_perp_l -> -a_para_l/2',
+)
+parser.add_argument(
     '-s',
     '--signal-count',
     dest='signal_count',
@@ -61,6 +68,15 @@ with bmf.Script(device=args.device) as script:
     import seaborn as sns
 
     signal_coeffs = bmf.coeffs.signal(args.signal_model)
+
+    if args.left_transform:
+        bmf.stdout('Performing transformations: a_para_l -> -a_perp_l, a_perp_l -> -a_para_l/2')
+        a_para_ls = signal_coeffs[0:6]
+        a_perp_ls = signal_coeffs[12:18]
+        for i in range(6):
+            signal_coeffs[i] = tf.constant(-a_perp_ls[i], dtype=tf.float32)
+            signal_coeffs[i+12] = tf.constant(-a_para_ls[i] / 2.0, dtype=tf.float32)
+
     signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
 
     names = ['q2', 'cos_theta_k', 'cos_theta_l', 'phi']

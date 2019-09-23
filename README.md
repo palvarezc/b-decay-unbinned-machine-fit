@@ -326,6 +326,7 @@ were when first started. The fit script could either continue using those, or re
 Further work:
 
 * Tune the optimizer better to improve fitting performance and quality.
+* Add support for B0 bar (implement CP-averaged and CP-asymmetric observables)
 * Add background. Will need B-meson mass term in PDF, a background event generator composed of polynomials,
 and fitting based on nuisance parameters for those polynomials.
 

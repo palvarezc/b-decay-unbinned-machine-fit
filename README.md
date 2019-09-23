@@ -2,7 +2,8 @@
 
 This project is for doing an unbinned `B0 → K* μ μ` angular observable fit based on this
 [paper](https://arxiv.org/abs/1504.00574) but using Tensorflow. The fitting is done to a generated toy signal.
-See [coeffs.py](./b_meson_fit/coeffs.py) for the values used.
+See [coeffs.py](./b_meson_fit/coeffs.py) for the values used. This dissertation produced from this work can be found
+at [here](./Dissertation.pdf).
 
 ## Requirements
 

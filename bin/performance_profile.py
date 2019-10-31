@@ -14,7 +14,7 @@ with bmf.Script() as script:
     if not bmf.user_is_root():
         bmf.stderr('This script needs root permissions. You can run it from the project folder with:')
         bmf.stderr(
-            'sudo -E --preserve-env=PYTHONPATH ./bin/profileLL.py')
+            'sudo -E --preserve-env=PYTHONPATH ./bin/performance_profile.py')
         exit(1)
 
     log = bmf.Log(script.name)

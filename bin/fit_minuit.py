@@ -5,6 +5,7 @@ import argparse
 import shutil
 import tensorflow.compat.v2 as tf
 import tqdm
+from iminuit import Minuit
 
 import b_meson_fit as bmf
 
@@ -133,16 +134,16 @@ parser.add_argument(
          '(default: {})'.format(bmf.Optimizer.grad_max_cutoff_default),
 )
 parser.add_argument(
-    '-g',
-    '--generator-seed',
-    dest='seed',
-    type=int,
-    default=-1,
-    help='seed for the generator (default: 1)'
-)
+        '-g',
+            '--generator-seed',
+            dest='seed',
+            type=int,
+            default=-1,
+            help='seed for the generator (default: 1)'
+        )
 args = parser.parse_args()
 
-# if (not args.seed==-1): tf.random.set_seed(args.seed)
+if (not args.seed==-1): tf.random.set_seed(args.seed)
 
 # Convert optimizer params to dict
 opt_params = {}
@@ -183,38 +184,63 @@ with bmf.Script(device=args.device) as script:
         # Time each iteration for CSV writing
         script.timer_start('fit')
 
-        tf.random.set_seed(3)
         signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
 
-        attempt = 1
-        converged = False
-        while not converged:
-            fit_coeffs = bmf.coeffs.fit(args.fit_init, args.signal_model)
-            optimizer = bmf.Optimizer(
-                fit_coeffs,
-                signal_events,
-                opt_name=args.opt_name,
-                learning_rate=args.learning_rate,
-                opt_params=opt_params,
-                grad_clip=args.grad_clip,
-                grad_max_cutoff=args.grad_max_cutoff
+
+        fit_coeffs = bmf.coeffs.fit(args.fit_init, args.signal_model)
+
+
+        optimizer = bmf.Optimizer(
+            fit_coeffs,
+            signal_events,
+            opt_name=args.opt_name,
+            learning_rate=args.learning_rate,
+            opt_params=opt_params,
+            grad_clip=args.grad_clip,
+            grad_max_cutoff=args.grad_max_cutoff
             )
 
-            while True:
-                optimizer.minimize()
-                if args.log:
-                    log.coefficients('fit_{}'.format(iteration), optimizer, signal_coeffs)
-                if optimizer.converged():
-                    converged = True
-                    if args.csv_file is not None:
-                        writer.write_coeffs(optimizer.normalized_nll.numpy(), fit_coeffs, script.timer_elapsed('fit'))
-                    break
-                if optimizer.step >= args.max_step:
-                    bmf.stderr('No convergence after {} steps. Restarting iteration'.format(args.max_step))
-                    attempt = attempt + 1
-                    if args.fit_init not in bmf.coeffs.fit_init_schemes_with_randomization:
-                        # If this scheme doesn't randomise coefficients, then restarting with the same signal will
-                        #  lead to the same result.
-                        bmf.stderr('{} initialisation used so generating new signal'.format(args.fit_init))
-                        signal_events = bmf.signal.generate(signal_coeffs, events_total=args.signal_count)
-                    break
+
+
+        fit_vars = []
+        for coeff in fit_coeffs:
+            if type(coeff)==type(fit_coeffs[0]): fit_vars.append(coeff)
+
+        pars_init = []
+        for coeff in fit_vars: pars_init.append(coeff.numpy())
+
+        # feed_dict_ = {}
+        # for coeff in fit_coeffs: feed_dict_[coeff[0:-2]] = 0
+
+        def func(pars):
+            j=0
+            for i in range(len(fit_coeffs)):
+                if type(fit_coeffs[i])==type(fit_coeffs[0]):
+                    fit_coeffs[i].assign(pars[j])
+                    j+=1
+
+            return optimizer.normalized_nll_feed(fit_coeffs).numpy()
+
+        m = Minuit.from_array_func(func, pars_init)
+        m.migrad()
+        m.hesse()
+        # m.minos()
+                            
+
+        if args.log:
+            log.coefficients('fit_{}'.format(iteration), optimizer, signal_coeffs)
+
+        if args.csv_file is not None:
+            pars_final = m.values.values()
+            j=0
+            for i in range(len(fit_coeffs)): 
+                if type(fit_coeffs[i])==type(fit_coeffs[0]):
+                    fit_coeffs[i].assign(pars_final[j])
+                    j+=1
+            writer.write_coeffs(func(pars_final), fit_coeffs, script.timer_elapsed('fit'))
+
+
+
+
+
+            

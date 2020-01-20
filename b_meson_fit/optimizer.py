@@ -98,3 +98,16 @@ class Optimizer:
             Scalar tensor
         """
         return bmfs.normalized_nll(self.fit_coeffs, self.signal_events)
+
+    def normalized_nll_feed(self, feed_dict):
+        """Get the normalized negative log likelihood
+
+        Working with the normalised version ensures we don't need to re-optimize hyper-parameters when we
+        change signal event numbers.
+
+        Returns:
+            Scalar tensor
+        """
+        return bmfs.normalized_nll(feed_dict, self.signal_events)
+
+
